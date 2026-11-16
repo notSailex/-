@@ -1,0 +1,598 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================================================
+   1. خط ثمانية للنصوص العادية والقراءة (Thmanyah Serif Text)
+   مخصص للنصوص، اليوميات، كتابات المستخدم، والملاحظات الهادئة
+   ========================================================= */
+@font-face {
+  font-family: 'Thmanyah Text';
+  src: url('/fonts/thmanyah/thmanyahseriftext-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Thmanyah Text';
+  src: url('/fonts/thmanyah/thmanyahseriftext-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Thmanyah Text';
+  src: url('/fonts/thmanyah/thmanyahseriftext-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* =========================================================
+   2. خط ثمانية للعرض والعناوين الفخمة (Thmanyah Serif Display)
+   مخصص للعناوين الرئيسية الكبيرة فقط (Headings) بطابع استعراضي
+   ========================================================= */
+@font-face {
+  font-family: 'Thmanyah Display';
+  src: url('/fonts/thmanyah/thmanyahserifdisplay-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Thmanyah Display';
+  src: url('/fonts/thmanyah/thmanyahserifdisplay-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Thmanyah Display';
+  src: url('/fonts/thmanyah/thmanyahserifdisplay-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Thmanyah Display';
+  src: url('/fonts/thmanyah/thmanyahserifdisplay-Black.woff2') format('woff2');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* تعريف المتغيرات الجذرية للخطوط */
+:root {
+  --app-font-text: 'Thmanyah Text', 'Tajawal', sans-serif;
+  --app-font-display: 'Thmanyah Display', 'Thmanyah Text', serif;
+  --app-font: var(--app-font-text);
+  --app-font-serif: var(--app-font-display);
+  --color-bg-base: #F2EDE4;
+  --color-bg-surface: #FAF7F0;
+  --color-bg-card: #EAE2D3;
+  --color-bg-card-hover: #E2D8C7;
+  --color-active-card: #E5D7BF;
+  --color-active-border: #C88A2C;
+  --color-accent-glow: rgba(200, 138, 44, 0.22);
+  --color-border-subtle: rgba(45, 35, 25, 0.09);
+  --color-border-strong: rgba(45, 35, 25, 0.18);
+  --color-text-primary: #14120E;
+  --color-text-secondary: #423B30;
+  --color-text-muted: #6B6152;
+  --color-accent-warm: #C88A2C;
+  --color-accent-hover: #AD721E;
+  --hero-ambient-color: rgba(217, 140, 35, 0.45);
+  --hero-ambient-soft: rgba(230, 165, 60, 0.25);
+  --hero-radial-gradient: radial-gradient(ellipse at 80% 20%, rgba(217, 140, 35, 0.20) 0%, rgba(230, 165, 60, 0.06) 55%, transparent 75%);
+  --book-spine-shadow: linear-gradient(to right, rgba(40, 30, 20, 0.14) 0%, rgba(40, 30, 20, 0.03) 8%, transparent 15%);
+  --book-page-texture: radial-gradient(circle at 50% 50%, rgba(250, 247, 240, 0.95) 0%, rgba(238, 231, 219, 0.65) 100%);
+  --journal-btn-bg: linear-gradient(135deg, #E5A84B 0%, #C88A2C 50%, #9C6314 100%);
+  --journal-btn-glow: rgba(200, 138, 44, 0.35);
+}
+
+/* =========================================================
+   3 خيارات دقيقة للوضع الليلي (لون الليل):
+   1. رمل (Sand): تدرجات برتقالية وعنبرية دافئة
+   2. سماء (Sky): تدرجات زرقاء هادئة ومزرقّة
+   3. نخيل (Palms): تدرجات خضراء زمردية طبيعية ومريحة
+   ========================================================= */
+
+.dark,
+.dark.night-sand {
+  --night-name: 'sand';
+  --color-bg-base: #0B0A09;
+  --color-bg-surface: #12100E;
+  --color-bg-card: #181512;
+  --color-bg-card-hover: #1F1B16;
+  --color-active-card: #221A10;
+  --color-active-border: #C88A2C;
+  --color-border-subtle: rgba(200, 138, 44, 0.12);
+  --color-border-strong: rgba(200, 138, 44, 0.22);
+  --color-text-primary: #F3EFE6;
+  --color-text-secondary: #C8BFB0;
+  --color-text-muted: #8E8373;
+  --color-accent-warm: #C88A2C;
+  --color-accent-hover: #B3761E;
+  --color-accent-glow: rgba(200, 138, 44, 0.08);
+  --hero-ambient-color: rgba(235, 138, 24, 0.75);
+  --hero-ambient-soft: rgba(200, 105, 18, 0.45);
+  --hero-radial-gradient: radial-gradient(ellipse at 80% 20%, rgba(235, 138, 24, 0.28) 0%, rgba(200, 105, 18, 0.08) 50%, transparent 75%);
+  --book-spine-shadow: linear-gradient(to right, rgba(0,0,0,0.92) 0%, rgba(35,22,12,0.6) 15%, transparent 35%);
+  --book-page-texture: radial-gradient(circle at 50% 50%, rgba(24,20,16,0.98) 0%, rgba(11,10,9,0.96) 100%);
+  --journal-btn-bg: linear-gradient(135deg, #D49838 0%, #B87B22 50%, #78490F 100%);
+  --journal-btn-glow: rgba(200, 138, 44, 0.16);
+}
+
+.dark.night-sky {
+  --night-name: 'sky';
+  --color-bg-base: #080B10;
+  --color-bg-surface: #0D121A;
+  --color-bg-card: #121822;
+  --color-bg-card-hover: #18202D;
+  --color-active-card: #162130;
+  --color-active-border: #527394;
+  --color-border-subtle: rgba(82, 115, 148, 0.12);
+  --color-border-strong: rgba(82, 115, 148, 0.22);
+  --color-text-primary: #ECEFF4;
+  --color-text-secondary: #B4C0D0;
+  --color-text-muted: #75869A;
+  --color-accent-warm: #688CAE;
+  --color-accent-hover: #527394;
+  --color-accent-glow: rgba(82, 115, 148, 0.08);
+  --hero-ambient-color: rgba(70, 135, 210, 0.72);
+  --hero-ambient-soft: rgba(45, 95, 160, 0.42);
+  --hero-radial-gradient: radial-gradient(ellipse at 80% 20%, rgba(70, 135, 210, 0.28) 0%, rgba(45, 95, 160, 0.08) 50%, transparent 75%);
+  --book-spine-shadow: linear-gradient(to right, rgba(0,0,0,0.92) 0%, rgba(12,24,44,0.6) 15%, transparent 35%);
+  --book-page-texture: radial-gradient(circle at 50% 50%, rgba(16,23,36,0.98) 0%, rgba(7,9,14,0.96) 100%);
+  --journal-btn-bg: linear-gradient(135deg, #688CAE 0%, #527394 50%, #324C65 100%);
+  --journal-btn-glow: rgba(82, 115, 148, 0.14);
+}
+
+.dark.night-palms {
+  --night-name: 'palms';
+  --color-bg-base: #070A08;
+  --color-bg-surface: #0B110D;
+  --color-bg-card: #101813;
+  --color-bg-card-hover: #16221A;
+  --color-active-card: #142219;
+  --color-active-border: #3B7A57;
+  --color-border-subtle: rgba(59, 122, 87, 0.12);
+  --color-border-strong: rgba(59, 122, 87, 0.22);
+  --color-text-primary: #ECF3EE;
+  --color-text-secondary: #B4C6BA;
+  --color-text-muted: #6E8475;
+  --color-accent-warm: #488E67;
+  --color-accent-hover: #3B7A57;
+  --color-accent-glow: rgba(59, 122, 87, 0.08);
+  --hero-ambient-color: rgba(48, 165, 105, 0.70);
+  --hero-ambient-soft: rgba(30, 120, 72, 0.42);
+  --hero-radial-gradient: radial-gradient(ellipse at 80% 20%, rgba(48, 165, 105, 0.28) 0%, rgba(30, 120, 72, 0.08) 50%, transparent 75%);
+  --book-spine-shadow: linear-gradient(to right, rgba(0,0,0,0.92) 0%, rgba(10,32,20,0.6) 15%, transparent 35%);
+  --book-page-texture: radial-gradient(circle at 50% 50%, rgba(14,26,19,0.98) 0%, rgba(6,9,7,0.96) 100%);
+  --journal-btn-bg: linear-gradient(135deg, #488E67 0%, #3B7A57 50%, #204631 100%);
+  --journal-btn-glow: rgba(59, 122, 87, 0.14);
+}
+
+/* ربط ألوان الخلفيات الداكنة والتدرجات بالثيم الليلي المختار تلقائياً */
+html.dark,
+.dark body,
+.dark header,
+.dark aside,
+.dark nav,
+.dark .dark\:bg-\[\#121214\],
+.dark .dark\:bg-\[\#0A0908\],
+.dark .dark\:bg-\[\#111214\],
+.dark .dark\:bg-\[var\(--color-bg-base\)\] {
+  background-color: var(--color-bg-base) !important;
+}
+
+.dark .dark\:bg-\[\#18181C\],
+.dark .dark\:bg-\[\#1E1E24\],
+.dark .dark\:bg-\[\#16171A\] {
+  background-color: var(--color-bg-surface) !important;
+}
+
+.dark .dark\:bg-\[\#1F1F24\],
+.dark .dark\:bg-\[\#25252B\],
+.dark .dark\:bg-\[\#26262D\],
+.dark .dark\:bg-\[\#151518\],
+.dark .dark\:bg-\[\#1D1D22\] {
+  background-color: var(--color-bg-card) !important;
+}
+
+/* ربط خلفيات العناصر النشطة والقوائم لمنع تسريب اللون الأزرق */
+.dark .bg-\[\#141A26\],
+.dark .dark\:bg-\[\#141A26\],
+.dark .bg-\[\#111724\],
+.dark .dark\:bg-\[\#111724\],
+.dark .dark\:bg-\[\#161B24\],
+.dark .dark\:bg-\[\#111622\] {
+  background-color: var(--color-bg-surface) !important;
+}
+
+.dark .dark\:hover\:bg-\[\#18202D\]:hover {
+  background-color: var(--color-bg-card-hover) !important;
+}
+
+/* تحسين البطاقات والقوائم لتكون غنية ومتباينة بدقة */
+.dark .dark\:bg-white\/\[0\.02\],
+.dark .dark\:bg-white\/\[0\.03\],
+.dark .dark\:bg-white\/\[0\.04\],
+.dark .dark\:bg-white\/\[0\.05\],
+.dark .dark\:bg-black\/20 {
+  background-color: var(--color-bg-surface) !important;
+}
+
+/* تدرج بطاقة الترحيب العلوية في لوحة التحكم */
+.dark .dark\:from-\[\#1D1D24\] {
+  --tw-gradient-from: var(--color-bg-card) var(--tw-gradient-from-position) !important;
+}
+.dark .dark\:via-\[\#191920\] {
+  --tw-gradient-stops: var(--tw-gradient-from), var(--color-bg-surface) var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+}
+.dark .dark\:to-\[\#131317\] {
+  --tw-gradient-to: var(--color-bg-base) var(--tw-gradient-to-position) !important;
+}
+
+.dark .dark\:text-\[\#F3EFE6\],
+.dark .dark\:text-\[\#EDE7DC\],
+.dark .dark\:text-white {
+  color: var(--color-text-primary) !important;
+}
+
+.dark .dark\:text-\[\#A8A196\],
+.dark .dark\:text-\[\#B5AFA4\],
+.dark .dark\:text-\[\#9E9689\],
+.dark .dark\:text-\[\#9EACB9\],
+.dark .dark\:text-\[\#A8B2C1\],
+.dark .dark\:text-\[\#CBD5E1\],
+.dark .dark\:text-\[\#C8D7E8\],
+.dark .dark\:text-\[\#C8DDF2\],
+.dark .dark\:text-\[\#DDD4C4\] {
+  color: var(--color-text-secondary) !important;
+}
+
+/* ربط الحدود والألوان النشطة بـ var(--color-accent-warm) المخصص لكل ثيم */
+.dark .text-\[\#E09F3E\],
+.dark .text-\[\#D8A752\],
+.dark .text-amber-500 {
+  color: var(--color-accent-warm) !important;
+}
+
+.dark .bg-\[\#E09F3E\],
+.dark .bg-\[\#D8A752\],
+.dark .bg-amber-500 {
+  background-color: var(--color-accent-warm) !important;
+}
+
+.dark .border-\[\#E09F3E\],
+.dark .border-\[\#D8A752\],
+.dark .border-amber-500 {
+  border-color: var(--color-active-border) !important;
+}
+
+.dark .ring-\[\#E09F3E\]\/30,
+.dark .ring-\[\#E09F3E\]\/40,
+.dark .ring-\[\#D8A752\]\/30 {
+  --tw-ring-color: color-mix(in srgb, var(--color-active-border) 28%, transparent) !important;
+}
+
+.dark .bg-\[\#E09F3E\]\/10,
+.dark .bg-\[\#E09F3E\]\/15,
+.dark .bg-\[\#E09F3E\]\/20,
+.dark .bg-\[\#D8A752\]\/15,
+.dark .bg-\[\#D8A752\]\/20 {
+  background-color: color-mix(in srgb, var(--color-accent-warm) 12%, transparent) !important;
+}
+
+.dark .shadow-\[0_0_12px_rgba\(216\,167\,82\,0\.15\)\],
+.dark .shadow-\[0_0_12px_rgba\(216\,167\,82\,0\.12\)\],
+.dark [class*="shadow-\[0_0_"] {
+  box-shadow: 0 0 8px var(--color-accent-glow) !important;
+}
+
+/* =========================================================
+   القضاء التام على الحواف البيضاء واستبدالها بحدود داكنة ناعمة تتبع الثيم
+   ========================================================= */
+.dark {
+  border-color: var(--color-border-subtle);
+}
+
+.dark *,
+.dark *::before,
+.dark *::after {
+  border-color: var(--color-border-subtle);
+}
+
+/* استثناء العناصر النشطة والمحددة صراحة */
+.dark [class*="border-\[var\(--color-active"],
+.dark [class*="border-\[1.5px\]"],
+.dark [class*="border-2"],
+.dark [class*="active-border"],
+.dark .border-\[var\(--color-active-border\)\] {
+  border-color: var(--color-active-border) !important;
+}
+
+.dark .border-transparent {
+  border-color: transparent !important;
+}
+
+.dark .border-black\/\[0\.08\],
+.dark .border-black\/\[0\.06\],
+.dark .border-black\/\[0\.07\],
+.dark .border-black\/\[0\.05\],
+.dark .border-black\/\[0\.04\],
+.dark .border-white\/10,
+.dark .border-white\/20,
+.dark .border-white\/\[0\.08\],
+.dark .border-white\/\[0\.06\],
+.dark .border-white\/\[0\.07\],
+.dark .border-white\/\[0\.05\],
+.dark .border-white\/\[0\.04\],
+.dark .border-white\/\[0\.1\],
+.dark .border-white\/\[0\.12\],
+.dark .dark\:border-white\/10,
+.dark .dark\:border-white\/20,
+.dark .dark\:border-white\/\[0\.08\],
+.dark .dark\:border-white\/\[0\.06\],
+.dark .dark\:border-white\/\[0\.07\],
+.dark .dark\:border-white\/\[0\.05\],
+.dark .dark\:border-white\/\[0\.04\],
+.dark .dark\:border-white\/\[0\.1\],
+.dark .dark\:border-white\/\[0\.12\],
+.dark .dark\:border-white,
+.dark [class*="border-white"],
+.dark [class*="divide-"] > :not([hidden]) ~ :not([hidden]),
+.dark [class*="divide-y"] > :not([hidden]) ~ :not([hidden]),
+.dark [class*="divide-x"] > :not([hidden]) ~ :not([hidden]),
+.dark .divide-black\/\[0\.06\] > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--color-border-subtle) !important;
+}
+
+/* =========================================================
+   تحسين وتنعيم الثيم الفاتح (Light Mode):
+   القضاء على التوهج الأبيض الساطع، جعل الخلفية بدرجة أوف-وايت كريمية هادئة
+   وزيادة تباين ووضوح النصوص لراحة العين
+   ========================================================= */
+html:not(.dark) body,
+html:not(.dark) header,
+html:not(.dark) aside,
+html:not(.dark) nav,
+html:not(.dark) .bg-\[\#FAF8F5\],
+html:not(.dark) [class*="bg-\[\#FAF8F5\]"] {
+  background-color: var(--color-bg-base) !important;
+}
+
+html:not(.dark) [class*="bg-\[\#FFFFFF\]"],
+html:not(.dark) .bg-white {
+  background-color: var(--color-bg-surface) !important;
+}
+
+html:not(.dark) [class*="bg-black\/\[0\.02\]"],
+html:not(.dark) [class*="bg-black\/\[0\.03\]"],
+html:not(.dark) [class*="bg-black\/\[0\.04\]"] {
+  background-color: var(--color-bg-card) !important;
+}
+
+html:not(.dark) [class*="hover\:bg-black\/\[0\.03\]"]:hover,
+html:not(.dark) [class*="hover\:bg-black\/\[0\.04\]"]:hover,
+html:not(.dark) [class*="hover\:bg-black\/\[0\.05\]"]:hover,
+html:not(.dark) [class*="hover\:bg-black\/\[0\.06\]"]:hover,
+html:not(.dark) [class*="hover\:bg-black\/\[0\.08\]"]:hover {
+  background-color: var(--color-bg-card-hover) !important;
+}
+
+html:not(.dark) [class*="bg-\[\#FAF5EC\]"] {
+  background-color: var(--color-active-card) !important;
+}
+
+/* تباين نصوص الوضع الفاتح لضمان الوضوح التام */
+html:not(.dark) .text-\[\#1D1A16\],
+html:not(.dark) [class*="text-\[\#1D1A16\]"] {
+  color: var(--color-text-primary) !important;
+}
+
+html:not(.dark) .text-\[\#5C5549\],
+html:not(.dark) [class*="text-\[\#5C5549\]"] {
+  color: var(--color-text-secondary) !important;
+}
+
+html:not(.dark) .text-\[\#7E786E\],
+html:not(.dark) .text-\[\#8C8476\],
+html:not(.dark) [class*="text-\[\#7E786E\]"],
+html:not(.dark) [class*="text-\[\#8C8476\]"] {
+  color: var(--color-text-muted) !important;
+}
+
+/* تدرج بطاقة الترحيب (الهيرو) في الوضع الفاتح: كريمي دافئ مريح */
+html:not(.dark) .from-\[\#FAF5EC\] {
+  --tw-gradient-from: #F5EFE4 var(--tw-gradient-from-position) !important;
+}
+html:not(.dark) .via-\[\#F6EFE2\] {
+  --tw-gradient-stops: var(--tw-gradient-from), #EEE4D3 var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+}
+html:not(.dark) .to-\[\#ECE3D2\] {
+  --tw-gradient-to: #E4D8C4 var(--tw-gradient-to-position) !important;
+}
+
+/* النصوص المؤقتة والافتراضية (Placeholders): واضحة ومقروءة بلون رمادي/فحمي مريح للعين في الوضع الفاتح */
+::placeholder {
+  color: #5C5549 !important;
+  opacity: 0.85 !important;
+}
+
+.dark ::placeholder {
+  color: var(--color-text-muted) !important;
+  opacity: 0.70 !important;
+}
+
+/* الجسم والنصوص العادية: استخدام Thmanyah Text حصرياً */
+html,
+body,
+#root {
+  font-family: var(--app-font-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* حقول الإدخال، النصوص، اليوميات، والملاحظات: استخدام Thmanyah Text */
+textarea,
+input,
+p,
+span,
+button,
+select,
+.font-text,
+.font-sans {
+  font-family: var(--app-font-text) !important;
+}
+
+/* العناوين الرئيسية الكبيرة فقط: استخدام Thmanyah Display الفخمة */
+h1,
+h2,
+.font-display,
+.font-serif {
+  font-family: var(--app-font-display) !important;
+}
+
+/* خطوط محددة يدوياً */
+.font-thmanyah-text {
+  font-family: 'Thmanyah Text', sans-serif !important;
+}
+
+.font-thmanyah-display {
+  font-family: 'Thmanyah Display', serif !important;
+}
+
+.font-amiri {
+  font-family: 'Amiri', serif !important;
+}
+
+.font-tajawal {
+  font-family: 'Tajawal', sans-serif !important;
+}
+
+/* Paper ruling styles */
+.paper-lined {
+  background-image: repeating-linear-gradient(
+    transparent,
+    transparent 31px,
+    rgba(224, 159, 62, 0.12) 31px,
+    rgba(224, 159, 62, 0.12) 32px
+  );
+  line-height: 32px;
+}
+
+.dark .paper-lined {
+  background-image: repeating-linear-gradient(
+    transparent,
+    transparent 31px,
+    rgba(224, 159, 62, 0.08) 31px,
+    rgba(224, 159, 62, 0.08) 32px
+  );
+}
+
+.paper-dotted {
+  background-image: radial-gradient(rgba(140, 132, 118, 0.25) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.dark .paper-dotted {
+  background-image: radial-gradient(rgba(243, 239, 230, 0.15) 1px, transparent 1px);
+}
+
+/* Custom Minimalist Scrollbars (Linear / Notion vibe) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(140, 132, 118, 0.2);
+  border-radius: 9999px;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(140, 132, 118, 0.4);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Realistic Tactile Paper styling */
+.paper-elevation {
+  box-shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+}
+
+.dark .paper-elevation {
+  box-shadow: 0 14px 34px -4px rgba(0, 0, 0, 0.7);
+}
+
+/* Subtle micro-glow effect */
+.hover-glow {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.hover-glow:hover {
+  box-shadow: 0 0 20px -3px rgba(224, 159, 62, 0.2);
+  transform: translateY(-1px);
+}
+
+/* Safe area for mobile navigation */
+.safe-area-bottom {
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+/* =========================================================
+   تأثيرات قلم الريشة والزر العائم لليوميات (Journal Floating Quill)
+   ========================================================= */
+.journal-quill-orb {
+  background: var(--journal-btn-bg);
+  border: 1px solid rgba(255, 255, 255, 0.28) !important;
+  box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.45),
+              inset 0 -2px 4px rgba(0, 0, 0, 0.25),
+              0 4px 14px rgba(0, 0, 0, 0.25);
+}
+
+.journal-quill-shell {
+  box-shadow: 0 6px 18px -4px var(--journal-btn-glow), 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.dark .journal-quill-shell {
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.85), 0 0 12px -2px var(--journal-btn-glow);
+}
+
+.journal-quill-glow {
+  background: var(--journal-btn-glow);
+}
+
+@keyframes journalQuillAura {
+  0%, 100% {
+    opacity: 0.18;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 0.42;
+    transform: scale(1.06);
+  }
+}
+
+.animate-journal-aura {
+  animation: journalQuillAura 3.6s ease-in-out infinite;
+}
+
