@@ -6,7 +6,8 @@ import {
   Sun,
   Settings,
   User,
-  Sliders
+  Sliders,
+  Library
 } from 'lucide-react';
 import { TrmezLogoIcon } from '../icons/TrmezLogoIcon';
 import { cn } from '../../lib/utils';
@@ -14,6 +15,7 @@ import { cn } from '../../lib/utils';
 interface HeaderProps {
   activeTab: ActiveTab;
   onNavigateSettings: () => void;
+  onNavigateLibrary?: () => void;
   onOpenAuth: () => void;
   user: UserProfile | null;
   settings: AppSettings;
@@ -26,13 +28,16 @@ const TAB_TITLES: Record<ActiveTab, string> = {
   home: 'الرئيسية والتقويم',
   journal: 'كتاب اليوميات',
   notes: 'الملاحظات السريعة',
-  stats: 'لوحة الإحصاءات',
+  library: 'مكتبتي الأدبية',
+  focus: 'جلسات التركيز',
+  stats: 'لوحة الإحصاءات والنبض',
   profile: 'الإعدادات وتخصيص الخزينة',
 };
 
 export const Header: React.FC<HeaderProps> = ({
   activeTab,
   onNavigateSettings,
+  onNavigateLibrary,
   onOpenAuth,
   user,
   settings,
@@ -125,6 +130,23 @@ export const Header: React.FC<HeaderProps> = ({
             {user?.name?.split(' ')[0] || 'الحساب'}
           </span>
         </button>
+
+        {/* Mobile Library Access Button */}
+        {onNavigateLibrary && (
+          <button
+            type="button"
+            onClick={onNavigateLibrary}
+            className={cn(
+              "lg:hidden w-8 h-8 rounded-full flex items-center justify-center border transition-all shadow-xs",
+              activeTab === 'library'
+                ? "bg-[var(--color-accent-warm)] text-white border-[var(--color-accent-warm)]"
+                : "bg-[var(--color-bg-card)] border-black/[0.06] dark:border-white/[0.08] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+            )}
+            title="مكتبتي الأدبية"
+          >
+            <Library className="w-4 h-4" />
+          </button>
+        )}
 
         {/* Standard Settings Gear Button (Mobile Only - 32px matching the logo) */}
         <button

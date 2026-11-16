@@ -14,7 +14,9 @@ import {
   Upload,
   AlignLeft,
   Grid,
-  Square
+  Square,
+  Calendar as CalendarIcon,
+  Check
 } from 'lucide-react';
 import { cn, toArabicNumerals } from '../../lib/utils';
 import { ambientSound } from '../../lib/audio';
@@ -362,7 +364,77 @@ export const CustomizationStudio: React.FC<CustomizationStudioProps> = ({
         </div>
       </div>
 
-      {/* 5. Ambient Sounds (الأجواء الصوتية) */}
+      {/* 5. Calendar Preferences (إعدادات التقويم والتواريخ) */}
+      <div className="space-y-2 pt-1">
+        <label className="text-[11px] font-semibold text-[#8C8476] dark:text-[var(--color-text-muted)] flex items-center gap-1.5">
+          <CalendarIcon className="w-3.5 h-3.5 text-[var(--color-accent-warm)]" />
+          <span>تفضيلات التقويم وعرض التواريخ</span>
+        </label>
+
+        <div className="space-y-2">
+          {/* Toggle: Show month number */}
+          <button
+            type="button"
+            onClick={() => onUpdateSettings?.({ showMonthNumber: !settings.showMonthNumber })}
+            className={cn(
+              "w-full flex items-center justify-between p-2.5 rounded-2xl border text-start transition-all duration-200",
+              settings.showMonthNumber
+                ? "bg-[var(--color-active-card)] border-[1.5px] border-[var(--color-active-border)] shadow-xs"
+                : "bg-black/[0.02] dark:bg-[var(--color-bg-surface)] border-[var(--color-border-subtle)] hover:border-[var(--color-active-border)]/40"
+            )}
+          >
+            <div>
+              <div className="text-xs font-bold text-[var(--color-text-primary)]">
+                إظهار رقم الشهر بجانب اسمه
+              </div>
+              <div className="text-[10px] text-[var(--color-text-muted)]">
+                مثل: نوفمبر (11) 2026
+              </div>
+            </div>
+            <div className={cn(
+              "w-8 h-4.5 rounded-full p-0.5 transition-colors relative flex items-center",
+              settings.showMonthNumber ? "bg-[var(--color-accent-warm)]" : "bg-black/20 dark:bg-white/20"
+            )}>
+              <div className={cn(
+                "w-3.5 h-3.5 rounded-full bg-white transition-transform shadow-xs",
+                settings.showMonthNumber ? "-translate-x-3.5" : "translate-x-0"
+              )} />
+            </div>
+          </button>
+
+          {/* Toggle: Hijri calendar */}
+          <button
+            type="button"
+            onClick={() => onUpdateSettings?.({ enableHijriCalendar: !settings.enableHijriCalendar })}
+            className={cn(
+              "w-full flex items-center justify-between p-2.5 rounded-2xl border text-start transition-all duration-200",
+              settings.enableHijriCalendar
+                ? "bg-[var(--color-active-card)] border-[1.5px] border-[var(--color-active-border)] shadow-xs"
+                : "bg-black/[0.02] dark:bg-[var(--color-bg-surface)] border-[var(--color-border-subtle)] hover:border-[var(--color-active-border)]/40"
+            )}
+          >
+            <div>
+              <div className="text-xs font-bold text-[var(--color-text-primary)]">
+                تفعيل التقويم الهجري
+              </div>
+              <div className="text-[10px] text-[var(--color-text-muted)]">
+                عرض الشهور الهجرية (محرم، صفر، ربيع الأول...)
+              </div>
+            </div>
+            <div className={cn(
+              "w-8 h-4.5 rounded-full p-0.5 transition-colors relative flex items-center",
+              settings.enableHijriCalendar ? "bg-[var(--color-accent-warm)]" : "bg-black/20 dark:bg-white/20"
+            )}>
+              <div className={cn(
+                "w-3.5 h-3.5 rounded-full bg-white transition-transform shadow-xs",
+                settings.enableHijriCalendar ? "-translate-x-3.5" : "translate-x-0"
+              )} />
+            </div>
+          </button>
+        </div>
+      </div>
+
+      {/* 6. Ambient Sounds (الأجواء الصوتية) */}
       <div className="space-y-1.5 pt-1">
         <div className="flex items-center justify-between">
           <label className="text-[11px] font-semibold text-[#8C8476] dark:text-[var(--color-text-muted)]">

@@ -14,15 +14,18 @@ import {
   Sparkles,
   Tag,
   ArrowRight,
-  FileText
+  FileText,
+  PenTool
 } from 'lucide-react';
 import { cn, toArabicNumerals, formatWordsCount } from '../../lib/utils';
+import { StylusCanvas } from '../common/StylusCanvas';
 
 const CATEGORIES = ['all', 'أفكار', 'إلهام', 'قراءة', 'مهام'] as const;
 
 export const QuickNotesView: React.FC = () => {
   const [notes, setNotes] = useState<QuickNote[]>(() => loadStoredNotes());
   const [viewMode, setViewMode] = useState<'list' | 'editor'>('list');
+  const [editorMode, setEditorMode] = useState<'text' | 'drawing'>('text');
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('all');
@@ -317,6 +320,13 @@ export const QuickNotesView: React.FC = () => {
                         <p className="text-xs text-[var(--color-text-secondary)] font-text line-clamp-3 leading-relaxed">
                           {n.content.trim() ? n.content : 'لا يوجد نص مدوّن بعد... اضغط لفتح المحرر والكتابة'}
                         </p>
+
+                        {/* رسمة القلم المرفقة (إن وُجدت) */}
+                        {n.drawingData && (
+                          <div className="mt-2.5 p-1.5 rounded-xl bg-black/[0.02] dark:bg-white/[0.03] border border-[var(--color-border-subtle)] flex items-center justify-center h-16 overflow-hidden">
+                            <img src={n.drawingData} alt="رسمة مرفقة" className="max-h-full object-contain opacity-90" />
+                          </div>
+                        )}
                       </div>
 
                       {/* ذيل البطاقة: التاريخ وعدد الكلمات */}
@@ -377,8 +387,41 @@ export const QuickNotesView: React.FC = () => {
                   </div>
                 </div>
 
-                {/* أدوات الملاحظة: التصنيف، التثبيت، والحذف */}
+                {/* أدوات الملاحظة: التبديل بين النص والرسم، التصنيف، التثبيت، والحذف */}
                 <div className="flex items-center gap-2">
+                  {/* زر التبديل بين النص والرسم */}
+                  <div className="flex items-center bg-black/[0.04] dark:bg-[var(--color-bg-surface)] p-0.5 rounded-xl border border-[var(--color-border-subtle)]">
+                    <button
+                      type="button"
+                      onClick={() => setEditorMode('text')}
+                      className={cn(
+                        "flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all",
+                        editorMode === 'text'
+                          ? "bg-[var(--color-accent-warm)] text-white shadow-xs"
+                          : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                      )}
+                      title="كتابة نصية"
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">نص</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setEditorMode('drawing')}
+                      className={cn(
+                        "flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all",
+                        editorMode === 'drawing'
+                          ? "bg-[var(--color-accent-warm)] text-white shadow-xs"
+                          : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                      )}
+                      title="رسم بالقلم الذكي"
+                    >
+                      <PenTool className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">رسم</span>
+                    </button>
+                  </div>
+
                   {/* اختيار التصنيف */}
                   <select
                     value={activeNote.category}
@@ -439,16 +482,67 @@ export const QuickNotesView: React.FC = () => {
                 />
               </div>
 
-              {/* المساحة الرئيسية الكاملة لكتابة الملاحظة */}
-              <div className="flex-1 min-h-[360px] relative flex flex-col">
-                <textarea
-                  value={activeNote.content}
-                  onChange={(e) => handleUpdateActive({ content: e.target.value })}
-                  placeholder="اكتب تفاصيل ملاحظتك، خواطرك السريعة، أو روابط واقتباسات بحرية تامة... كل حرف يُحفظ تلقائياً دون انقطاع..."
-                  style={{ lineHeight: '1.9' }}
-                  className="w-full h-full flex-1 min-h-[360px] bg-transparent resize-none focus:outline-none text-base md:text-lg text-[var(--color-text-primary)] placeholder-[#5C5549] dark:placeholder-[var(--color-text-muted)] font-text overflow-y-auto scrollbar-thin"
-                  spellCheck={false}
-                />
+              {/* المساحة الرئيسية للملاحظة: نصية أو رسم حر بالقلم */}
+              <div className="flex-1 min-h-[380px] relative flex flex-col">
+                {editorMode === 'drawing' ? (
+                  <div className="flex-1 flex flex-col min-h-[400px] space-y-2">
+                    <StylusCanvas
+                      initialDataUrl={activeNote.drawingData}
+                      onSave={(dataUrl) => handleUpdateActive({ drawingData: dataUrl })}
+                      onClear={() => handleUpdateActive({ drawingData: undefined })}
+                      height={400}
+                    />
+                    <p className="text-[11px] text-[var(--color-text-muted)] text-center">
+                      يتم حفظ الرسمة بالقلم تلقائياً ضمن الملاحظة السريعة.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex-1 flex flex-col min-h-[360px]">
+                    <textarea
+                      value={activeNote.content}
+                      onChange={(e) => handleUpdateActive({ content: e.target.value })}
+                      placeholder="اكتب تفاصيل ملاحظتك، خواطرك السريعة، أو روابط واقتباسات بحرية تامة... كل حرف يُحفظ تلقائياً دون انقطاع..."
+                      style={{ lineHeight: '1.9' }}
+                      className="w-full flex-1 min-h-[260px] bg-transparent resize-none focus:outline-none text-base md:text-lg text-[var(--color-text-primary)] placeholder-[#5C5549] dark:placeholder-[var(--color-text-muted)] font-text overflow-y-auto scrollbar-thin"
+                      spellCheck={false}
+                    />
+
+                    {/* عرض الرسمة المرفقة بالملاحظة إذا كانت موجودة */}
+                    {activeNote.drawingData && (
+                      <div className="mt-4 p-3 rounded-2xl border border-[var(--color-border-subtle)] bg-black/[0.02] dark:bg-[var(--color-bg-base)]/40 relative">
+                        <div className="flex items-center justify-between pb-2 mb-2 border-b border-[var(--color-border-subtle)] text-xs text-[var(--color-text-muted)]">
+                          <span className="flex items-center gap-1.5">
+                            <PenTool className="w-3.5 h-3.5 text-[var(--color-accent-warm)]" />
+                            <span>رسمة مرفقة بالملاحظة</span>
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setEditorMode('drawing')}
+                              className="text-xs text-[var(--color-accent-warm)] font-semibold hover:underline"
+                            >
+                              تعديل بالقلم
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateActive({ drawingData: undefined })}
+                              className="text-xs text-rose-500 hover:underline"
+                            >
+                              حذف الرسمة
+                            </button>
+                          </div>
+                        </div>
+                        <div className="flex justify-center p-2">
+                          <img
+                            src={activeNote.drawingData}
+                            alt="رسمة الملاحظة"
+                            className="max-h-60 rounded-xl object-contain shadow-xs"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* الشريط السفلي لمعلومات الملاحظة */}

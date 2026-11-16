@@ -165,6 +165,7 @@ export const BookView: React.FC<BookViewProps> = ({
                       onPrevDay={onPrevDay}
                       onNextDay={onNextDay}
                       isToday={isToday}
+                      settings={settings}
                     />
                   </div>
 
@@ -196,6 +197,7 @@ export const BookView: React.FC<BookViewProps> = ({
                         onPrevDay={onPrevDay}
                         onNextDay={onNextDay}
                         isToday={isToday}
+                        settings={settings}
                       />
                     </div>
                   )}

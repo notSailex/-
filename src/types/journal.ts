@@ -26,6 +26,8 @@ export interface JournalEntry {
   createdAt: string;
   updatedAt: string;
   favorite?: boolean;
+  drawingData?: string; // رسومات القلم الذكي (Data URL)
+  images?: string[]; // صور مرفقة بالتدوينة (بحد أقصى 3 صور)
 }
 
 export interface QuickNote {
@@ -35,6 +37,7 @@ export interface QuickNote {
   category: string;
   pinned: boolean;
   updatedAt: string;
+  drawingData?: string; // رسومات القلم الذكي (Data URL)
 }
 
 export interface UserStats {
@@ -72,4 +75,38 @@ export interface AppSettings {
   paperRuling: 'none' | 'lined' | 'dotted';
   language: 'ar' | 'en';
   autoSaveDelayMs: number;
+  showMonthNumber?: boolean; // إظهار رقم الشهر بجانب اسمه
+  enableHijriCalendar?: boolean; // تفعيل التقويم الهجري
+}
+
+// ----------------------------------------------------
+// نظام البومودورو والتركيز (Focus & Pomodoro)
+// ----------------------------------------------------
+export type FocusSessionType = 'study' | 'work' | 'reading' | 'meditation';
+
+export interface FocusSession {
+  id: string;
+  durationMinutes: number;
+  sessionType: FocusSessionType;
+  subject: string;
+  completedAt: string; // ISO string
+  date: string; // YYYY-MM-DD
+}
+
+// ----------------------------------------------------
+// قسم مكتبتي الأدبية (My Library & Reading Tracker)
+// ----------------------------------------------------
+export type ReadingStatus = 'completed' | 'reading' | 'unread';
+
+export interface BookItem {
+  id: string;
+  title: string; // اسم الكتاب (إلزامي)
+  coverImage: string; // صورة غلاف الكتاب (إلزامي)
+  status: ReadingStatus; // حالة القراءة (إلزامي)
+  author?: string; // اسم المؤلف (اختياري)
+  rating?: number; // التقييم بالنجوم 1-5 (اختياري)
+  finishedDate?: string; // تاريخ الانتهاء (اختياري)
+  summary?: string; // ملخص أو رأي عن الكتاب (اختياري)
+  createdAt: string;
+  updatedAt: string;
 }

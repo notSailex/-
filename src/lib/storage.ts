@@ -1,9 +1,12 @@
-import { JournalEntry, QuickNote, AppSettings, MoodType } from '../types/journal';
+import { JournalEntry, QuickNote, AppSettings, MoodType, FocusSession, BookItem } from '../types/journal';
 import { getTodayISODate, getConsecutiveDate, calculateWordCount, calculateReadingTime } from './utils';
 
 const STORAGE_KEY_ENTRIES = 'trmez_journal_entries_v1';
 const STORAGE_KEY_NOTES = 'trmez_quick_notes_v1';
 const STORAGE_KEY_SETTINGS = 'trmez_settings_v1';
+const STORAGE_KEY_FOCUS_SESSIONS = 'trmez_focus_sessions_v1';
+const STORAGE_KEY_FOCUS_SUBJECTS = 'trmez_focus_subjects_v1';
+const STORAGE_KEY_BOOKS = 'trmez_library_books_v1';
 
 export const DEFAULT_SETTINGS: AppSettings = {
   theme: 'dark',
@@ -16,6 +19,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   paperRuling: 'lined',
   language: 'ar',
   autoSaveDelayMs: 600,
+  showMonthNumber: false,
+  enableHijriCalendar: false,
 };
 
 function generateInitialEntries(): Record<string, JournalEntry> {
@@ -210,5 +215,148 @@ export function saveStoredNotes(notes: QuickNote[]) {
     localStorage.setItem(STORAGE_KEY_NOTES, JSON.stringify(notes));
   } catch (e) {
     console.error('Error saving notes', e);
+  }
+}
+
+// ----------------------------------------------------
+// تخزين جلسات التركيز والبومودورو والمواد
+// ----------------------------------------------------
+const DEFAULT_FOCUS_SUBJECTS = ['برمجة', 'قراءة حرة', 'رياضيات', 'لغات', 'كتابة وأدب', 'عام'];
+
+const DEFAULT_FOCUS_SESSIONS: FocusSession[] = [
+  {
+    id: 'focus-1',
+    durationMinutes: 25,
+    sessionType: 'study',
+    subject: 'برمجة',
+    completedAt: new Date(Date.now() - 3600000 * 2).toISOString(),
+    date: getTodayISODate(),
+  },
+  {
+    id: 'focus-2',
+    durationMinutes: 25,
+    sessionType: 'reading',
+    subject: 'قراءة حرة',
+    completedAt: new Date(Date.now() - 86400000).toISOString(),
+    date: getConsecutiveDate(getTodayISODate(), -1),
+  },
+  {
+    id: 'focus-3',
+    durationMinutes: 45,
+    sessionType: 'work',
+    subject: 'كتابة وأدب',
+    completedAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+    date: getConsecutiveDate(getTodayISODate(), -2),
+  },
+  {
+    id: 'focus-4',
+    durationMinutes: 20,
+    sessionType: 'meditation',
+    subject: 'عام',
+    completedAt: new Date(Date.now() - 86400000 * 3).toISOString(),
+    date: getConsecutiveDate(getTodayISODate(), -3),
+  },
+];
+
+export function loadStoredFocusSessions(): FocusSession[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_FOCUS_SESSIONS);
+    if (!raw) {
+      localStorage.setItem(STORAGE_KEY_FOCUS_SESSIONS, JSON.stringify(DEFAULT_FOCUS_SESSIONS));
+      return DEFAULT_FOCUS_SESSIONS;
+    }
+    return JSON.parse(raw);
+  } catch {
+    return DEFAULT_FOCUS_SESSIONS;
+  }
+}
+
+export function saveStoredFocusSessions(sessions: FocusSession[]) {
+  try {
+    localStorage.setItem(STORAGE_KEY_FOCUS_SESSIONS, JSON.stringify(sessions));
+  } catch (e) {
+    console.error('Error saving focus sessions', e);
+  }
+}
+
+export function loadStoredFocusSubjects(): string[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_FOCUS_SUBJECTS);
+    if (!raw) {
+      localStorage.setItem(STORAGE_KEY_FOCUS_SUBJECTS, JSON.stringify(DEFAULT_FOCUS_SUBJECTS));
+      return DEFAULT_FOCUS_SUBJECTS;
+    }
+    return JSON.parse(raw);
+  } catch {
+    return DEFAULT_FOCUS_SUBJECTS;
+  }
+}
+
+export function saveStoredFocusSubjects(subjects: string[]) {
+  try {
+    localStorage.setItem(STORAGE_KEY_FOCUS_SUBJECTS, JSON.stringify(subjects));
+  } catch (e) {
+    console.error('Error saving focus subjects', e);
+  }
+}
+
+// ----------------------------------------------------
+// تخزين كتب ومكتبتي الأدبية
+// ----------------------------------------------------
+const DEFAULT_BOOKS: BookItem[] = [
+  {
+    id: 'book-1',
+    title: 'في مديح الظل',
+    author: 'جونيشيرو تانيزاكي',
+    coverImage: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&q=80',
+    status: 'completed',
+    rating: 5,
+    finishedDate: '2026-11-10',
+    summary: 'رسالة فلسفية بصرية مدهشة عن جماليات الظلال والعتمة في العمارة والأدب والروح الشرقية مقارنة بالسطوع الغربي.',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'book-2',
+    title: 'طوق الحمامة في الألفة والأُلاّف',
+    author: 'ابن حزم الأندلسي',
+    coverImage: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80',
+    status: 'reading',
+    rating: 5,
+    summary: 'من أعذب ما كُتب في الأدب الأندلسي حول فلسفة المشاعر الإنسانية وعلامات المحبة النفسية وأخلاق الوفاء.',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'book-3',
+    title: 'التفكير فريضة إسلامية',
+    author: 'عباس محمود العقاد',
+    coverImage: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=400&q=80',
+    status: 'unread',
+    rating: 4,
+    summary: 'أطروحة عقلانية رصينة حول إعمال العقل والمنطق وأثر التفكير الحر في بناء النهضة الفكرية.',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+];
+
+export function loadStoredBooks(): BookItem[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_BOOKS);
+    if (!raw) {
+      localStorage.setItem(STORAGE_KEY_BOOKS, JSON.stringify(DEFAULT_BOOKS));
+      return DEFAULT_BOOKS;
+    }
+    return JSON.parse(raw);
+  } catch {
+    return DEFAULT_BOOKS;
+  }
+}
+
+export function saveStoredBooks(books: BookItem[]) {
+  try {
+    localStorage.setItem(STORAGE_KEY_BOOKS, JSON.stringify(books));
+  } catch (e) {
+    console.error('Error saving library books', e);
   }
 }

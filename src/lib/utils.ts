@@ -71,26 +71,104 @@ export const ARABIC_MONTHS = [
   'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
 ];
 
+export const HIJRI_MONTHS = [
+  'محرم', 'صفر', 'ربيع الأول', 'ربيع الآخر',
+  'جمادى الأولى', 'جمادى الآخرة', 'رجب', 'شعبان',
+  'رمضان', 'شوال', 'ذو القعدة', 'ذو الحجة'
+];
+
 export const ARABIC_DAYS = [
   'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'
 ];
 
-export function formatDateArabic(isoDate: string): {
+/**
+ * دالة استخراج تفاصيل التاريخ الهجري بدقة تقويم أم القرى
+ */
+export function getHijriDateParts(date: Date) {
+  try {
+    const fmt = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura', {
+      day: 'numeric',
+      month: 'numeric',
+      year: 'numeric'
+    });
+    const parts = fmt.formatToParts(date);
+    const dayStr = parts.find(p => p.type === 'day')?.value || '1';
+    const monthStr = parts.find(p => p.type === 'month')?.value || '1';
+    const yearStr = parts.find(p => p.type === 'year')?.value || '1448';
+
+    const parseDigits = (s: string) => {
+      const western = s.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d).toString());
+      return parseInt(western, 10) || 1;
+    };
+
+    const day = parseDigits(dayStr);
+    const month = parseDigits(monthStr);
+    const year = parseDigits(yearStr);
+    const monthName = HIJRI_MONTHS[month - 1] || 'محرم';
+
+    return {
+      dayNumber: day,
+      dayNumberAr: toArabicNumerals(day),
+      monthNumber: month,
+      monthNumberAr: toArabicNumerals(month),
+      monthName,
+      year,
+      yearAr: toArabicNumerals(year),
+    };
+  } catch {
+    return {
+      dayNumber: date.getDate(),
+      dayNumberAr: toArabicNumerals(date.getDate()),
+      monthNumber: 1,
+      monthNumberAr: '١',
+      monthName: 'محرم',
+      year: 1448,
+      yearAr: '١٤٤٨',
+    };
+  }
+}
+
+export function formatDateArabic(
+  isoDate: string,
+  options?: { showMonthNumber?: boolean; enableHijri?: boolean }
+): {
   dayName: string;
   dayNumber: number;
   dayNumberAr: string;
   monthName: string;
+  monthNumber: number;
   year: number;
   yearAr: string;
   fullString: string;
+  isHijri?: boolean;
 } {
   const [y, m, d] = isoDate.split('-').map(Number);
   const dateObj = new Date(y, m - 1, d);
   
   const dayName = ARABIC_DAYS[dateObj.getDay()] || '';
+
+  if (options?.enableHijri) {
+    const hijri = getHijriDateParts(dateObj);
+    const monthWithNum = options.showMonthNumber
+      ? `${hijri.monthName} (${hijri.monthNumber})`
+      : hijri.monthName;
+    return {
+      dayName,
+      dayNumber: hijri.dayNumber,
+      dayNumberAr: hijri.dayNumberAr,
+      monthName: hijri.monthName,
+      monthNumber: hijri.monthNumber,
+      year: hijri.year,
+      yearAr: hijri.yearAr,
+      fullString: `${dayName}، ${hijri.dayNumber} ${monthWithNum} ${hijri.year} هـ`,
+      isHijri: true,
+    };
+  }
+
   const dayNumber = d;
   const dayNumberAr = toArabicNumerals(d);
   const monthName = ARABIC_MONTHS[m - 1] || '';
+  const monthWithNum = options?.showMonthNumber ? `${monthName} (${m})` : monthName;
   const year = y;
   const yearAr = toArabicNumerals(y);
 
@@ -99,9 +177,11 @@ export function formatDateArabic(isoDate: string): {
     dayNumber,
     dayNumberAr,
     monthName,
+    monthNumber: m,
     year,
     yearAr,
-    fullString: `${dayName}، ${dayNumberAr} ${monthName} ${yearAr}`,
+    fullString: `${dayName}، ${dayNumber} ${monthWithNum} ${year}`,
+    isHijri: false,
   };
 }
 
@@ -190,3 +270,46 @@ export const MOOD_CONFIGS: Record<MoodType, MoodConfig> = {
     descriptionAr: 'مشاعر ثقيلة أو حزن، يحتاج مساحة من الرقة والتدوين لتفريغه.',
   },
 };
+
+/**
+ * ضغط الصور برمجياً على طرف العميل لحفظ أداء وسرعة التطبيق
+ */
+export async function compressImage(file: File, maxDim = 1200, quality = 0.78): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(e.target?.result as string);
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve(dataUrl);
+      };
+      img.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}

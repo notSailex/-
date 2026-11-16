@@ -9,6 +9,8 @@ import { HomeDashboard } from './components/dashboard/HomeDashboard';
 import { BookView } from './components/journal/BookView';
 import { QuickNotesView } from './components/notes/QuickNotesView';
 import { StatsDashboard } from './components/stats/StatsDashboard';
+import { FocusTimerView } from './components/focus/FocusTimerView';
+import { LibraryView } from './components/library/LibraryView';
 import { ProfileView } from './components/profile/ProfileView';
 import { AuthModal } from './components/auth/AuthModal';
 import { CustomizationDrawer } from './components/settings/CustomizationDrawer';
@@ -75,6 +77,7 @@ export const App: React.FC = () => {
         <Header
           activeTab={activeTab}
           onNavigateSettings={() => setActiveTab('profile')}
+          onNavigateLibrary={() => setActiveTab('library')}
           onOpenAuth={() => setIsAuthOpen(true)}
           user={user}
           settings={settings}
@@ -92,6 +95,8 @@ export const App: React.FC = () => {
               onSelectDate={handleSelectDateFromCalendar}
               onStartWritingToday={handleStartWritingToday}
               stats={stats}
+              settings={settings}
+              onNavigateTab={setActiveTab}
             />
           )}
 
@@ -110,6 +115,14 @@ export const App: React.FC = () => {
 
           {activeTab === 'notes' && (
             <QuickNotesView />
+          )}
+
+          {activeTab === 'library' && (
+            <LibraryView />
+          )}
+
+          {activeTab === 'focus' && (
+            <FocusTimerView />
           )}
 
           {activeTab === 'stats' && (

@@ -8,7 +8,9 @@ import {
   BarChart2,
   User,
   Shield,
-  Sparkles
+  Sparkles,
+  Timer,
+  Library
 } from 'lucide-react';
 import { TrmezLogoIcon } from '../icons/TrmezLogoIcon';
 import { cn } from '../../lib/utils';
@@ -36,6 +38,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'home', label: 'الرئيسية والتقويم', icon: Home },
     { id: 'journal', label: 'كتاب اليوميات', icon: BookOpen },
     { id: 'notes', label: 'الملاحظات السريعة', icon: StickyNote },
+    { id: 'library', label: 'مكتبتي', icon: Library },
+    { id: 'focus', label: 'جلسات التركيز', icon: Timer },
     { id: 'stats', label: 'الإحصاءات والنبض', icon: BarChart2 },
   ];
 

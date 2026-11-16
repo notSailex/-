@@ -1,5 +1,6 @@
-import React from 'react';
-import { UserStats, MoodType } from '../../types/journal';
+import React, { useMemo } from 'react';
+import { UserStats, MoodType, FocusSession, FocusSessionType } from '../../types/journal';
+import { loadStoredFocusSessions } from '../../lib/storage';
 import {
   MOOD_CONFIGS,
   toArabicNumerals,
@@ -18,7 +19,13 @@ import {
   Calendar,
   Sparkles,
   TrendingUp,
-  Smile
+  Smile,
+  Timer,
+  GraduationCap,
+  Briefcase,
+  Heart,
+  Clock,
+  Layers
 } from 'lucide-react';
 
 interface StatsDashboardProps {
@@ -46,6 +53,61 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({
   const totalMoodLogs = Object.values(moodCounts).reduce((a, b) => a + b, 0) || 1;
 
   const moodKeys: MoodType[] = ['radiant', 'peaceful', 'neutral', 'exhausted', 'heavy'];
+
+  // Focus Sessions Analytics
+  const focusSessions = useMemo(() => loadStoredFocusSessions(), []);
+
+  const totalFocusMinutes = useMemo(() => {
+    return focusSessions.reduce((acc, s) => acc + s.durationMinutes, 0);
+  }, [focusSessions]);
+
+  const totalFocusHours = (totalFocusMinutes / 60).toFixed(1);
+
+  // Time distribution per subject
+  const subjectDistribution = useMemo(() => {
+    const map: Record<string, number> = {};
+    focusSessions.forEach(s => {
+      map[s.subject] = (map[s.subject] || 0) + s.durationMinutes;
+    });
+    return Object.entries(map)
+      .map(([subject, minutes]) => ({
+        subject,
+        minutes,
+        hours: (minutes / 60).toFixed(1),
+        percentage: totalFocusMinutes > 0 ? Math.round((minutes / totalFocusMinutes) * 100) : 0,
+      }))
+      .sort((a, b) => b.minutes - a.minutes);
+  }, [focusSessions, totalFocusMinutes]);
+
+  // Time distribution per session type
+  const typeDistribution = useMemo(() => {
+    const map: Record<FocusSessionType, number> = {
+      study: 0,
+      work: 0,
+      reading: 0,
+      meditation: 0,
+    };
+    focusSessions.forEach(s => {
+      map[s.sessionType] = (map[s.sessionType] || 0) + s.durationMinutes;
+    });
+
+    const labels: Record<FocusSessionType, { label: string; icon: React.ElementType; color: string }> = {
+      study: { label: 'مذاكرة', icon: GraduationCap, color: '#38BDF8' },
+      work: { label: 'عمل', icon: Briefcase, color: '#F59E0B' },
+      reading: { label: 'قراءة', icon: BookOpen, color: '#10B981' },
+      meditation: { label: 'تأمل', icon: Heart, color: '#EC4899' },
+    };
+
+    return (Object.keys(map) as FocusSessionType[]).map(type => ({
+      type,
+      label: labels[type].label,
+      icon: labels[type].icon,
+      color: labels[type].color,
+      minutes: map[type],
+      hours: (map[type] / 60).toFixed(1),
+      percentage: totalFocusMinutes > 0 ? Math.round((map[type] / totalFocusMinutes) * 100) : 0,
+    }));
+  }, [focusSessions, totalFocusMinutes]);
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-8 animate-fade-in pb-16 select-none">
@@ -275,6 +337,163 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* ========================================================
+          قسم إحصاءات التركيز والبومودورو والمجالات (Focus Analytics)
+          ======================================================== */}
+      <div className="space-y-6">
+        <div className="flex items-center gap-2">
+          <Timer className="w-5 h-5 text-[var(--color-accent-warm)]" />
+          <h3 className="text-xl font-display font-bold text-[var(--color-text-primary)]">
+            إحصاءات التركيز والبومودورو
+          </h3>
+        </div>
+
+        {/* Focus KPI Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="p-4 md:p-5 rounded-2xl bg-[var(--color-bg-surface)] dark:bg-[var(--color-bg-card)] border border-[var(--color-border-subtle)] shadow-subtle dark:shadow-subtle-dark">
+            <div className="flex items-center justify-between text-[var(--color-text-muted)] mb-2">
+              <span className="text-xs font-medium">ساعات التركيز</span>
+              <Clock className="w-4 h-4 text-[var(--color-accent-warm)]" />
+            </div>
+            <div className="text-2xl md:text-3xl font-sans font-bold text-[var(--color-text-primary)]">
+              {toArabicNumerals(totalFocusHours)}
+            </div>
+            <div className="text-[11px] text-[var(--color-text-muted)] mt-1">
+              ساعة مسجلة
+            </div>
+          </div>
+
+          <div className="p-4 md:p-5 rounded-2xl bg-[var(--color-bg-surface)] dark:bg-[var(--color-bg-card)] border border-[var(--color-border-subtle)] shadow-subtle dark:shadow-subtle-dark">
+            <div className="flex items-center justify-between text-[var(--color-text-muted)] mb-2">
+              <span className="text-xs font-medium">الجلسات المكتملة</span>
+              <Timer className="w-4 h-4 text-emerald-500" />
+            </div>
+            <div className="text-2xl md:text-3xl font-sans font-bold text-[var(--color-text-primary)]">
+              {toArabicNumerals(focusSessions.length)}
+            </div>
+            <div className="text-[11px] text-[var(--color-text-muted)] mt-1">
+              جلسة بومودورو
+            </div>
+          </div>
+
+          <div className="p-4 md:p-5 rounded-2xl bg-[var(--color-bg-surface)] dark:bg-[var(--color-bg-card)] border border-[var(--color-border-subtle)] shadow-subtle dark:shadow-subtle-dark">
+            <div className="flex items-center justify-between text-[var(--color-text-muted)] mb-2">
+              <span className="text-xs font-medium">أعلى مادة تركيز</span>
+              <Layers className="w-4 h-4 text-amber-500" />
+            </div>
+            <div className="text-lg md:text-xl font-display font-bold text-[var(--color-text-primary)] truncate">
+              {subjectDistribution[0]?.subject || '—'}
+            </div>
+            <div className="text-[11px] text-[var(--color-text-muted)] mt-1">
+              {subjectDistribution[0] ? `${toArabicNumerals(subjectDistribution[0].hours)} ساعة` : 'لا توجد جلسات'}
+            </div>
+          </div>
+
+          <div className="p-4 md:p-5 rounded-2xl bg-[var(--color-bg-surface)] dark:bg-[var(--color-bg-card)] border border-[var(--color-border-subtle)] shadow-subtle dark:shadow-subtle-dark">
+            <div className="flex items-center justify-between text-[var(--color-text-muted)] mb-2">
+              <span className="text-xs font-medium">متوسط مدة الجلسة</span>
+              <Flame className="w-4 h-4 text-orange-500" />
+            </div>
+            <div className="text-2xl md:text-3xl font-sans font-bold text-[var(--color-text-primary)]">
+              {toArabicNumerals(focusSessions.length > 0 ? Math.round(totalFocusMinutes / focusSessions.length) : 0)}
+            </div>
+            <div className="text-[11px] text-[var(--color-text-muted)] mt-1">
+              دقيقة لكل جلسة
+            </div>
+          </div>
+        </div>
+
+        {/* Dual Column: Time by Subject & Time by Session Type */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Time Distribution per Subject */}
+          <div className="p-6 md:p-7 rounded-2xl md:rounded-3xl bg-[var(--color-bg-surface)] dark:bg-[var(--color-bg-card)] border border-[var(--color-border-subtle)] shadow-subtle dark:shadow-subtle-dark space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--color-border-subtle)]">
+              <div className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-[var(--color-accent-warm)]" />
+                <h4 className="text-sm font-serif font-bold text-[var(--color-text-primary)]">
+                  توزيع الوقت لكل مادة / مجال
+                </h4>
+              </div>
+              <span className="text-xs text-[var(--color-text-muted)]">
+                {toArabicNumerals(subjectDistribution.length)} مواد
+              </span>
+            </div>
+
+            {subjectDistribution.length === 0 ? (
+              <p className="text-xs text-[var(--color-text-muted)] py-4 text-center">
+                لم تسجل أي جلسات تركيز بعد.
+              </p>
+            ) : (
+              <div className="space-y-3.5">
+                {subjectDistribution.map(item => (
+                  <div key={item.subject}>
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span className="font-semibold text-[var(--color-text-primary)]">
+                        {item.subject}
+                      </span>
+                      <div className="flex items-center gap-2 text-[#8C8476]">
+                        <span>{toArabicNumerals(item.hours)} س ({toArabicNumerals(item.minutes)} د)</span>
+                        <span className="font-bold text-[var(--color-text-primary)]">{formatPercentArabic(item.percentage)}</span>
+                      </div>
+                    </div>
+                    <div className="w-full h-2 rounded-full bg-black/[0.05] dark:bg-[var(--color-bg-surface)] overflow-hidden">
+                      <div
+                        style={{ width: `${item.percentage}%` }}
+                        className="h-full rounded-full bg-gradient-to-r from-[#B37418] to-[#D49838] transition-all duration-700"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Time Distribution per Session Type */}
+          <div className="p-6 md:p-7 rounded-2xl md:rounded-3xl bg-[var(--color-bg-surface)] dark:bg-[var(--color-bg-card)] border border-[var(--color-border-subtle)] shadow-subtle dark:shadow-subtle-dark space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--color-border-subtle)]">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-[var(--color-accent-warm)]" />
+                <h4 className="text-sm font-serif font-bold text-[var(--color-text-primary)]">
+                  توزيع الوقت حسب نوع الجلسة
+                </h4>
+              </div>
+              <span className="text-xs text-[var(--color-text-muted)]">
+                (مذاكرة، عمل، قراءة، تأمل)
+              </span>
+            </div>
+
+            <div className="space-y-3.5">
+              {typeDistribution.map(item => {
+                const Icon = item.icon;
+                return (
+                  <div key={item.type}>
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span className="font-semibold text-[var(--color-text-primary)] flex items-center gap-1.5">
+                        <Icon className="w-3.5 h-3.5" style={{ color: item.color }} />
+                        <span>{item.label}</span>
+                      </span>
+                      <div className="flex items-center gap-2 text-[#8C8476]">
+                        <span>{toArabicNumerals(item.hours)} س ({toArabicNumerals(item.minutes)} د)</span>
+                        <span className="font-bold text-[var(--color-text-primary)]">{formatPercentArabic(item.percentage)}</span>
+                      </div>
+                    </div>
+                    <div className="w-full h-2 rounded-full bg-black/[0.05] dark:bg-[var(--color-bg-surface)] overflow-hidden">
+                      <div
+                        style={{
+                          width: `${item.percentage}%`,
+                          backgroundColor: item.color
+                        }}
+                        className="h-full rounded-full transition-all duration-700"
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
     </div>

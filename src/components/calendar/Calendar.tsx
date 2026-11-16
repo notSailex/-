@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { JournalEntry, MoodType } from '../../types/journal';
+import { JournalEntry, MoodType, AppSettings } from '../../types/journal';
 import {
   ARABIC_MONTHS,
   ARABIC_DAYS,
   getTodayISODate,
   toArabicNumerals,
   MOOD_CONFIGS,
+  getHijriDateParts,
   cn
 } from '../../lib/utils';
 import {
@@ -21,12 +22,14 @@ interface CalendarProps {
   entries: Record<string, JournalEntry>;
   selectedDate: string;
   onSelectDate: (date: string) => void;
+  settings?: AppSettings;
 }
 
 export const Calendar: React.FC<CalendarProps> = ({
   entries,
   selectedDate,
   onSelectDate,
+  settings,
 }) => {
   // Device's current real date
   const todayISO = getTodayISODate();
@@ -105,6 +108,20 @@ export const Calendar: React.FC<CalendarProps> = ({
     }),
   };
 
+  // Determine month titles based on Hijri and Month Number settings
+  const middleDate = new Date(viewYear, viewMonth - 1, 15);
+  const hijriMiddle = getHijriDateParts(middleDate);
+  const isHijri = Boolean(settings?.enableHijriCalendar);
+  const showNum = Boolean(settings?.showMonthNumber);
+
+  const monthTitle = isHijri
+    ? `${hijriMiddle.monthName} ${showNum ? `(${hijriMiddle.monthNumber})` : ''} ${hijriMiddle.year} هـ`
+    : `${ARABIC_MONTHS[viewMonth - 1]} ${showNum ? `(${viewMonth})` : ''} ${toArabicNumerals(viewYear)}`;
+
+  const monthSubtitle = isHijri
+    ? `الموافق: ${ARABIC_MONTHS[viewMonth - 1]} ${toArabicNumerals(viewYear)} م`
+    : 'انقر على أي يوم لفتح تدوينته مباشرة';
+
   return (
     <div className="w-full bg-[var(--color-bg-surface)] dark:bg-[var(--color-bg-card)] rounded-2xl md:rounded-3xl p-5 md:p-7 border border-[var(--color-border-subtle)] shadow-subtle dark:shadow-subtle-dark transition-all select-none">
       {/* Calendar Header */}
@@ -116,7 +133,7 @@ export const Calendar: React.FC<CalendarProps> = ({
           <div>
             <AnimatePresence mode="wait" custom={monthDirection}>
               <motion.h3
-                key={`${viewYear}-${viewMonth}`}
+                key={`${viewYear}-${viewMonth}-${isHijri}-${showNum}`}
                 custom={monthDirection}
                 initial={{ opacity: 0, y: monthDirection === 'next' ? 6 : -6 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -124,11 +141,11 @@ export const Calendar: React.FC<CalendarProps> = ({
                 transition={{ duration: 0.28, ease: 'easeOut' }}
                 className="text-xl md:text-2xl font-display font-bold text-[var(--color-text-primary)]"
               >
-                {ARABIC_MONTHS[viewMonth - 1]} {toArabicNumerals(viewYear)}
+                {monthTitle}
               </motion.h3>
             </AnimatePresence>
             <p className="text-xs text-[var(--color-text-muted)]">
-              انقر على أي يوم لفتح تدوينته مباشرة
+              {monthSubtitle}
             </p>
           </div>
         </div>
@@ -206,6 +223,7 @@ export const Calendar: React.FC<CalendarProps> = ({
               const entry = entries[currentCellDate];
               const hasContent = entry && entry.content.trim().length > 0;
               const moodConfig = entry?.mood ? MOOD_CONFIGS[entry.mood] : null;
+              const cellHijri = isHijri ? getHijriDateParts(new Date(viewYear, viewMonth - 1, dayNum)) : null;
 
               return (
                 <button
@@ -223,16 +241,23 @@ export const Calendar: React.FC<CalendarProps> = ({
                 >
                   {/* Day Number Header with Eastern Arabic Numerals */}
                   <div className="flex items-center justify-between w-full">
-                    <span className={cn(
-                      "text-xs md:text-sm font-semibold rounded-md px-1.5 py-0.5 font-sans",
-                      isToday
-                        ? "bg-[var(--color-accent-warm)] text-white shadow-xs"
-                        : isSelected
-                        ? "text-[var(--color-accent-warm)] font-bold"
-                        : "text-[#1D1A16] dark:text-[#FFFFFF]"
-                    )}>
-                      {toArabicNumerals(dayNum)}
-                    </span>
+                    <div className="flex items-baseline gap-1">
+                      <span className={cn(
+                        "text-xs md:text-sm font-semibold rounded-md px-1.5 py-0.5 font-sans",
+                        isToday
+                          ? "bg-[var(--color-accent-warm)] text-white shadow-xs"
+                          : isSelected
+                          ? "text-[var(--color-accent-warm)] font-bold"
+                          : "text-[#1D1A16] dark:text-[#FFFFFF]"
+                      )}>
+                        {cellHijri ? toArabicNumerals(cellHijri.dayNumber) : toArabicNumerals(dayNum)}
+                      </span>
+                      {cellHijri && (
+                        <span className="text-[9px] text-[var(--color-text-muted)] font-sans opacity-70">
+                          {toArabicNumerals(dayNum)}
+                        </span>
+                      )}
+                    </div>
 
                     {moodConfig && (
                       <span

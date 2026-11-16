@@ -11,7 +11,8 @@ import {
   Globe,
   Sliders,
   Sparkles,
-  Check
+  Check,
+  Calendar as CalendarIcon
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -242,7 +243,74 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
           </div>
 
-          {/* 4. Data Backup & Export */}
+          {/* 4. Calendar Settings (إعدادات التقويم والتواريخ) */}
+          <div className="pt-2">
+            <label className="text-xs font-semibold uppercase tracking-wider text-[#7E786E] dark:text-[#8C8476] flex items-center gap-1.5 mb-3">
+              <CalendarIcon className="w-3.5 h-3.5 text-[#E09F3E]" />
+              <span>تفضيلات التقويم وعرض التواريخ</span>
+            </label>
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => onUpdateSettings({ showMonthNumber: !settings.showMonthNumber })}
+                className={cn(
+                  "w-full flex items-center justify-between p-3 rounded-xl border text-start transition-all",
+                  settings.showMonthNumber
+                    ? "border-[#E09F3E] bg-[#E09F3E]/10 ring-2 ring-[#E09F3E]/30"
+                    : "border-black/[0.08] dark:border-[var(--color-border-subtle)] hover:bg-black/[0.02]"
+                )}
+              >
+                <div>
+                  <div className="text-xs font-bold text-[#1D1A16] dark:text-[#F3EFE6]">
+                    إظهار رقم الشهر بجانب اسمه
+                  </div>
+                  <div className="text-[10px] text-[#7E786E] dark:text-[#8C8476]">
+                    مثل: نوفمبر (11) 2026
+                  </div>
+                </div>
+                <div className={cn(
+                  "w-8 h-4.5 rounded-full p-0.5 transition-colors relative flex items-center",
+                  settings.showMonthNumber ? "bg-[#E09F3E]" : "bg-black/20 dark:bg-white/20"
+                )}>
+                  <div className={cn(
+                    "w-3.5 h-3.5 rounded-full bg-white transition-transform shadow-xs",
+                    settings.showMonthNumber ? "-translate-x-3.5" : "translate-x-0"
+                  )} />
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onUpdateSettings({ enableHijriCalendar: !settings.enableHijriCalendar })}
+                className={cn(
+                  "w-full flex items-center justify-between p-3 rounded-xl border text-start transition-all",
+                  settings.enableHijriCalendar
+                    ? "border-[#E09F3E] bg-[#E09F3E]/10 ring-2 ring-[#E09F3E]/30"
+                    : "border-black/[0.08] dark:border-[var(--color-border-subtle)] hover:bg-black/[0.02]"
+                )}
+              >
+                <div>
+                  <div className="text-xs font-bold text-[#1D1A16] dark:text-[#F3EFE6]">
+                    تفعيل التقويم الهجري
+                  </div>
+                  <div className="text-[10px] text-[#7E786E] dark:text-[#8C8476]">
+                    عرض الشهور الهجرية (محرم، صفر، ربيع الأول...)
+                  </div>
+                </div>
+                <div className={cn(
+                  "w-8 h-4.5 rounded-full p-0.5 transition-colors relative flex items-center",
+                  settings.enableHijriCalendar ? "bg-[#E09F3E]" : "bg-black/20 dark:bg-white/20"
+                )}>
+                  <div className={cn(
+                    "w-3.5 h-3.5 rounded-full bg-white transition-transform shadow-xs",
+                    settings.enableHijriCalendar ? "-translate-x-3.5" : "translate-x-0"
+                  )} />
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* 5. Data Backup & Export */}
           <div className="pt-4 border-t border-black/[0.08] dark:border-[var(--color-border-subtle)]">
             <label className="text-xs font-semibold uppercase tracking-wider text-[#7E786E] dark:text-[#8C8476] block mb-3">
               الأمان والنسخ الاحتياطي (Data Vault)

@@ -1,5 +1,6 @@
 import React from 'react';
-import { JournalEntry, UserStats } from '../../types/journal';
+import { JournalEntry, UserStats, AppSettings } from '../../types/journal';
+import { ActiveTab } from '../mobile/MobileBottomNav';
 import { Calendar } from '../calendar/Calendar';
 import {
   formatDateArabic,
@@ -19,7 +20,9 @@ import {
   Heart,
   Clock,
   BookOpen,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon,
+  Library,
+  Timer
 } from 'lucide-react';
 
 interface HomeDashboardProps {
@@ -28,6 +31,8 @@ interface HomeDashboardProps {
   onSelectDate: (date: string) => void;
   onStartWritingToday: () => void;
   stats: UserStats;
+  settings?: AppSettings;
+  onNavigateTab?: (tab: ActiveTab) => void;
 }
 
 const LITERARY_QUOTES = [
@@ -43,9 +48,14 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
   onSelectDate,
   onStartWritingToday,
   stats,
+  settings,
+  onNavigateTab,
 }) => {
   const todayISO = getTodayISODate();
-  const todayFormatted = formatDateArabic(todayISO);
+  const todayFormatted = formatDateArabic(todayISO, {
+    showMonthNumber: settings?.showMonthNumber,
+    enableHijri: settings?.enableHijriCalendar,
+  });
   const todayEntry = entries[todayISO];
   const hasTodayEntry = todayEntry && todayEntry.content.trim().length > 0;
 
@@ -167,6 +177,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
             entries={entries}
             selectedDate={selectedDate}
             onSelectDate={onSelectDate}
+            settings={settings}
           />
         </div>
 
@@ -192,6 +203,39 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
               {formatWordsCount(stats.totalWordsWritten)}
             </div>
           </div>
+
+          {/* Quick Shortcuts to Library & Focus */}
+          {onNavigateTab && (
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => onNavigateTab('library')}
+                className="p-3.5 rounded-3xl bg-[var(--color-bg-surface)] dark:bg-[var(--color-bg-card)] border border-[var(--color-border-subtle)] hover:border-[var(--color-active-border)]/50 transition-all text-start group shadow-subtle dark:shadow-subtle-dark hover:scale-[1.01]"
+              >
+                <div className="flex items-center gap-2 text-xs font-bold text-[var(--color-text-primary)] group-hover:text-[var(--color-accent-warm)] mb-1">
+                  <Library className="w-4 h-4 text-[var(--color-accent-warm)]" />
+                  <span>مكتبتي</span>
+                </div>
+                <p className="text-[10px] text-[var(--color-text-muted)]">
+                  رفوف الكتب وتقييم القراءات
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onNavigateTab('focus')}
+                className="p-3.5 rounded-3xl bg-[var(--color-bg-surface)] dark:bg-[var(--color-bg-card)] border border-[var(--color-border-subtle)] hover:border-[var(--color-active-border)]/50 transition-all text-start group shadow-subtle dark:shadow-subtle-dark hover:scale-[1.01]"
+              >
+                <div className="flex items-center gap-2 text-xs font-bold text-[var(--color-text-primary)] group-hover:text-[var(--color-accent-warm)] mb-1">
+                  <Timer className="w-4 h-4 text-[var(--color-accent-warm)]" />
+                  <span>جلسة تركيز</span>
+                </div>
+                <p className="text-[10px] text-[var(--color-text-muted)]">
+                  مؤقت البومودورو والمواد
+                </p>
+              </button>
+            </div>
+          )}
 
           {/* Recent Entries List */}
           <div className="p-5 rounded-3xl bg-[var(--color-bg-surface)] dark:bg-[var(--color-bg-card)] border border-[var(--color-border-subtle)] shadow-subtle dark:shadow-subtle-dark">

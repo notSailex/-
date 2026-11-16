@@ -1,8 +1,8 @@
 import React from 'react';
-import { Home, StickyNote, BarChart2, Settings } from 'lucide-react';
+import { Home, StickyNote, BarChart2, Timer } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
-export type ActiveTab = 'home' | 'notes' | 'journal' | 'stats' | 'profile';
+export type ActiveTab = 'home' | 'notes' | 'journal' | 'focus' | 'stats' | 'profile' | 'library';
 
 interface MobileBottomNavProps {
   activeTab: ActiveTab;
@@ -191,19 +191,19 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           <span className="text-[10px] mt-1 font-serif tracking-wider font-medium">الإحصاءات</span>
         </button>
 
-        {/* 5. الإعدادات */}
+        {/* 5. التركيز */}
         <button
           type="button"
-          onClick={() => onChangeTab('profile')}
+          onClick={() => onChangeTab('focus')}
           className={cn(
             "flex-1 flex flex-col items-center justify-center py-1 transition-all duration-200",
-            activeTab === 'profile'
+            activeTab === 'focus'
               ? "text-[var(--color-accent-warm)] scale-105"
               : "text-[#7E786E] dark:text-[var(--color-text-muted)] hover:text-[#1D1A16] dark:hover:text-[#F3EFE6]"
           )}
         >
-          <Settings className={cn("w-5 h-5", activeTab === 'profile' && "stroke-[2.5px]")} />
-          <span className="text-[10px] mt-1 font-serif tracking-wider font-medium">الإعدادات</span>
+          <Timer className={cn("w-5 h-5", activeTab === 'focus' && "stroke-[2.5px]")} />
+          <span className="text-[10px] mt-1 font-serif tracking-wider font-medium">التركيز</span>
         </button>
       </div>
     </nav>

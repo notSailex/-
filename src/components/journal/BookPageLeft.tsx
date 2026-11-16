@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { JournalEntry, MoodType } from '../../types/journal';
+import { JournalEntry, MoodType, AppSettings } from '../../types/journal';
 import { formatDateArabic, formatDateEnglish, cn } from '../../lib/utils';
 import { MoodSelector } from './MoodSelector';
 import {
@@ -23,6 +23,7 @@ interface BookPageLeftProps {
   onPrevDay: () => void;
   onNextDay: () => void;
   isToday: boolean;
+  settings?: AppSettings;
 }
 
 const WEATHER_OPTIONS = [
@@ -48,11 +49,15 @@ export const BookPageLeft: React.FC<BookPageLeftProps> = ({
   onPrevDay,
   onNextDay,
   isToday,
+  settings,
 }) => {
   const [newTagInput, setNewTagInput] = useState('');
   const [showTagInput, setShowTagInput] = useState(false);
 
-  const arabicDate = formatDateArabic(entry.date);
+  const arabicDate = formatDateArabic(entry.date, {
+    showMonthNumber: settings?.showMonthNumber,
+    enableHijri: settings?.enableHijriCalendar,
+  });
   const englishDate = formatDateEnglish(entry.date);
 
   // Pick prompt deterministically based on date day number
