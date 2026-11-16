@@ -231,7 +231,7 @@ export const Calendar: React.FC<CalendarProps> = ({
                   type="button"
                   onClick={() => onSelectDate(currentCellDate)}
                   className={cn(
-                    "group relative flex flex-col justify-between p-2 md:p-2.5 rounded-2xl text-start transition-all duration-200 select-none",
+                    "group relative overflow-hidden flex flex-col justify-between p-1.5 sm:p-2 md:p-2.5 rounded-2xl text-start transition-all duration-200 select-none",
                     "h-16 md:h-20 border",
                     isSelected
                       ? "bg-[#FAF5EC] dark:bg-[var(--color-active-card)] border-[1.5px] border-[var(--color-active-border)] shadow-xs ring-1 ring-[var(--color-active-border)]/20 z-10 scale-[1.01]"
@@ -239,53 +239,59 @@ export const Calendar: React.FC<CalendarProps> = ({
                     isToday && !isSelected && "border-[var(--color-active-border)]/60 ring-1 ring-[var(--color-active-border)]/20"
                   )}
                 >
-                  {/* Day Number Header with Eastern Arabic Numerals */}
-                  <div className="flex items-center justify-between w-full">
-                    <div className="flex items-baseline gap-1">
-                      <span className={cn(
-                        "text-xs md:text-sm font-semibold rounded-md px-1.5 py-0.5 font-sans",
-                        isToday
-                          ? "bg-[var(--color-accent-warm)] text-white shadow-xs"
-                          : isSelected
-                          ? "text-[var(--color-accent-warm)] font-bold"
-                          : "text-[#1D1A16] dark:text-[#FFFFFF]"
-                      )}>
-                        {cellHijri ? toArabicNumerals(cellHijri.dayNumber) : toArabicNumerals(dayNum)}
-                      </span>
-                      {cellHijri && (
-                        <span className="text-[9px] text-[var(--color-text-muted)] font-sans opacity-70">
-                          {toArabicNumerals(dayNum)}
-                        </span>
-                      )}
-                    </div>
-
-                    {moodConfig && (
-                      <span
-                        className="text-xs transition-transform group-hover:scale-125"
-                        title={moodConfig.labelAr}
-                      >
-                        {moodConfig.emoji}
+                  {/* الصف العلوي: مخصص للتاريخين فقط بدون أيقونات تزاحمهم */}
+                  <div className="flex items-baseline gap-1 w-full truncate">
+                    <span className={cn(
+                      "text-xs md:text-sm font-semibold rounded-md px-1 py-0.5 font-sans leading-none",
+                      isToday
+                        ? "bg-[var(--color-accent-warm)] text-white shadow-xs"
+                        : isSelected
+                        ? "text-[var(--color-accent-warm)] font-bold"
+                        : "text-[#1D1A16] dark:text-[#FFFFFF]"
+                    )}>
+                      {cellHijri ? toArabicNumerals(cellHijri.dayNumber) : toArabicNumerals(dayNum)}
+                    </span>
+                    {cellHijri && (
+                      <span className="text-[10px] text-[var(--color-text-muted)] font-sans opacity-70 leading-none">
+                        {toArabicNumerals(dayNum)}
                       </span>
                     )}
                   </div>
 
-                  {/* Bottom indicators: Word count or writing dot */}
-                  <div className="w-full flex items-center justify-between text-[10px]">
-                    {hasContent ? (
-                      <div className="flex items-center gap-1 text-[#8C8476] dark:text-[var(--color-text-muted)] font-sans">
-                        <Feather className="w-2.5 h-2.5 text-[var(--color-accent-warm)]" />
-                        <span className="hidden md:inline">{toArabicNumerals(entry.wordCount)} ك</span>
-                      </div>
-                    ) : (
-                      <span />
-                    )}
+                  {/* الصف السفلي: نبض المزاج وأيقونة التدوينة والريشة بمساحة مستقلة */}
+                  <div className="w-full flex items-center justify-between text-[10px] mt-auto pt-1">
+                    {/* جهة اليمين: أيقونة نبض المزاج بحجم ناعم 13px - 14px */}
+                    <div className="flex items-center gap-1 shrink-0">
+                      {moodConfig ? (
+                        <span
+                          className="text-[13px] md:text-[14px] leading-none transition-transform group-hover:scale-115 select-none"
+                          title={moodConfig.labelAr}
+                        >
+                          {moodConfig.emoji}
+                        </span>
+                      ) : (
+                        <span className="w-3 h-3" />
+                      )}
+                    </div>
 
-                    {hasContent && (
-                      <span
-                        className="w-1.5 h-1.5 rounded-full"
-                        style={{ backgroundColor: moodConfig?.color || 'var(--color-accent-warm)' }}
-                      />
-                    )}
+                    {/* جهة اليسار: مؤشر التدوينة (الريشة وعدد الكلمات أو النقطة) */}
+                    <div className="flex items-center gap-1 min-w-0">
+                      {hasContent ? (
+                        <div className="flex items-center gap-1 text-[#8C8476] dark:text-[var(--color-text-muted)] font-sans">
+                          <Feather className="w-2.5 h-2.5 text-[var(--color-accent-warm)] shrink-0" />
+                          <span className="hidden md:inline leading-none">{toArabicNumerals(entry.wordCount)} ك</span>
+                        </div>
+                      ) : (
+                        <span />
+                      )}
+
+                      {hasContent && (
+                        <span
+                          className="w-1.5 h-1.5 rounded-full shrink-0"
+                          style={{ backgroundColor: moodConfig?.color || 'var(--color-accent-warm)' }}
+                        />
+                      )}
+                    </div>
                   </div>
                 </button>
               );
