@@ -40,35 +40,36 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   return (
-    <aside className="hidden lg:flex flex-col justify-between w-72 xl:w-80 h-screen sticky top-0 bg-[var(--color-bg-base)] border-l border-[var(--color-border-subtle)] p-5 select-none z-30 overflow-y-auto">
-      {/* Top Section: Brand Logo & Navigation */}
-      <div className="space-y-5">
-        <div className="flex items-center justify-between px-1 pt-1">
-          <div className="flex items-center gap-3.5 group/logo cursor-default">
-            {/* Minimalist Circular Emblem with Warm Amber Ambient Glow */}
-            <div className="relative shrink-0">
-              {/* Ambient Glow Halo */}
-              <div
-                className="absolute -inset-1.5 rounded-full bg-gradient-to-tr from-[#B37418] via-[#D49838] to-[#F59E0B] opacity-45 dark:opacity-60 blur-md pointer-events-none transition-opacity duration-300 group-hover/logo:opacity-80"
-                aria-hidden="true"
-              />
-              <div className="relative w-10 h-10 rounded-full bg-gradient-to-tr from-[#B37418] via-[#CB8826] to-[#E8A73D] dark:from-[#8C520E] dark:via-[#B37418] dark:to-[#D89630] text-[#FFFDF8] flex items-center justify-center shadow-[0_4px_16px_rgba(179,116,24,0.35)] dark:shadow-[0_4px_22px_rgba(179,116,24,0.45)] border border-white/35 dark:border-amber-300/30 transition-transform duration-300 group-hover/logo:scale-105">
-                <TrmezLogoIcon className="w-5.5 h-5.5 text-[#FFFDF8] drop-shadow-xs" />
-              </div>
-            </div>
-
-            {/* Harmonious Typography Alignment */}
-            <div className="flex flex-col justify-center select-none">
-              <h1 className="text-xl font-display font-black tracking-tight text-[var(--color-text-primary)] leading-tight">
-                تِرميـز
-              </h1>
-              <p className="text-[10px] text-[var(--color-text-muted)] tracking-wide font-medium mt-0.5 leading-normal">
-                دفتر التدوين والتأمل الهادئ
-              </p>
+    <aside className="hidden lg:flex flex-col justify-between w-72 xl:w-80 h-screen sticky top-0 bg-[var(--color-bg-base)] border-l border-black/[0.06] dark:border-white/[0.05] select-none z-30">
+      {/* Top Header Bar: Perfectly aligned with Header (h-14) */}
+      <div className="h-14 px-5 flex items-center border-b border-black/[0.06] dark:border-white/[0.05] shrink-0">
+        <div className="flex items-center gap-3 group/logo cursor-default">
+          {/* Minimalist Circular Emblem with Warm Amber Ambient Glow */}
+          <div className="relative shrink-0">
+            {/* Ambient Glow Halo */}
+            <div
+              className="absolute -inset-1 rounded-full bg-gradient-to-tr from-[#B37418] via-[#D49838] to-[#F59E0B] opacity-40 dark:opacity-55 blur-xs pointer-events-none transition-opacity duration-300 group-hover/logo:opacity-75"
+              aria-hidden="true"
+            />
+            <div className="relative w-8.5 h-8.5 rounded-full bg-gradient-to-tr from-[#B37418] via-[#CB8826] to-[#E8A73D] dark:from-[#8C520E] dark:via-[#B37418] dark:to-[#D89630] text-[#FFFDF8] flex items-center justify-center shadow-xs shadow-[#B37418]/20 border border-white/35 dark:border-amber-300/30 transition-transform duration-300 group-hover/logo:scale-105">
+              <TrmezLogoIcon className="w-5 h-5 text-[#FFFDF8] drop-shadow-xs" />
             </div>
           </div>
-        </div>
 
+          {/* Harmonious Typography Alignment */}
+          <div className="flex flex-col justify-center select-none">
+            <h1 className="text-[17px] font-display font-black tracking-tight text-[var(--color-text-primary)] leading-none">
+              تِرميـز
+            </h1>
+            <p className="text-[10px] text-[var(--color-text-muted)] tracking-wide font-medium mt-1 leading-none">
+              دفتر التدوين والتأمل الهادئ
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Navigation Area */}
+      <div className="flex-1 px-5 py-4 space-y-5 overflow-y-auto">
         {/* Navigation Links */}
         <nav className="space-y-1.5">
           {navItems.map(({ id, label, icon: Icon }) => {
@@ -96,10 +97,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Bottom Section: User status card */}
-      <div className="pt-4 mt-4 border-t border-[var(--color-border-subtle)]">
+      <div className="p-4 border-t border-black/[0.06] dark:border-white/[0.05] shrink-0">
         <div
           onClick={onOpenAuth}
-          className="flex items-center justify-between p-3 rounded-2xl bg-black/[0.03] dark:bg-[var(--color-bg-card)] border border-[var(--color-border-subtle)] cursor-pointer hover:border-[var(--color-active-border)]/50 transition-all"
+          className="flex items-center justify-between p-3 rounded-2xl bg-black/[0.03] dark:bg-[var(--color-bg-card)] border border-black/[0.06] dark:border-white/[0.08] cursor-pointer hover:border-[var(--color-active-border)]/50 transition-all"
         >
           <div className="flex items-center gap-2.5 overflow-hidden">
             <div className="w-8 h-8 rounded-xl bg-[var(--color-accent-warm)]/20 text-[var(--color-accent-warm)] flex items-center justify-center shrink-0">

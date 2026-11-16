@@ -41,26 +41,34 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleCustomization,
 }) => {
   return (
-    <header className="w-full h-16 px-4 md:px-8 flex items-center justify-between border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-base)] backdrop-blur-md sticky top-0 z-30">
-      {/* Title / Brand on Mobile */}
+    <header className="w-full h-14 px-4 md:px-8 flex items-center justify-between border-b border-black/[0.06] dark:border-white/[0.05] bg-[var(--color-bg-base)]/90 backdrop-blur-md sticky top-0 z-30 transition-all select-none">
+      {/* Title / Brand Section */}
       <div className="flex items-center gap-3">
-        <div className="relative lg:hidden group/logo shrink-0">
-          {/* Ambient Glow Halo */}
-          <div
-            className="absolute -inset-1 rounded-full bg-gradient-to-tr from-[#B37418] via-[#D49838] to-[#F59E0B] opacity-45 dark:opacity-60 blur-xs pointer-events-none"
-            aria-hidden="true"
-          />
-          <div className="relative w-8 h-8 rounded-full bg-gradient-to-tr from-[#B37418] via-[#CB8826] to-[#E8A73D] dark:from-[#8C520E] dark:via-[#B37418] dark:to-[#D89630] text-[#FFFDF8] flex items-center justify-center shadow-sm shadow-[#B37418]/25 border border-white/35 dark:border-amber-300/30">
-            <TrmezLogoIcon className="w-4.5 h-4.5 text-[#FFFDF8] drop-shadow-xs" />
+        {/* Mobile View: 32px Golden Logo + "تِرميـز" 16px */}
+        <div className="flex lg:hidden items-center gap-2.5">
+          <div className="relative group/logo shrink-0">
+            {/* Ambient Glow Halo */}
+            <div
+              className="absolute -inset-1 rounded-full bg-gradient-to-tr from-[#B37418] via-[#D49838] to-[#F59E0B] opacity-40 dark:opacity-55 blur-xs pointer-events-none"
+              aria-hidden="true"
+            />
+            <div className="relative w-8 h-8 rounded-full bg-gradient-to-tr from-[#B37418] via-[#CB8826] to-[#E8A73D] dark:from-[#8C520E] dark:via-[#B37418] dark:to-[#D89630] text-[#FFFDF8] flex items-center justify-center shadow-xs shadow-[#B37418]/20 border border-white/35 dark:border-amber-300/30">
+              <TrmezLogoIcon className="w-4.5 h-4.5 text-[#FFFDF8] drop-shadow-xs" />
+            </div>
           </div>
+          <h1 className="text-[16px] font-display font-black tracking-tight text-[var(--color-text-primary)] leading-none">
+            تِرميـز
+          </h1>
         </div>
-        <div>
-          <h2 className="text-base md:text-lg font-display font-bold text-[var(--color-text-primary)]">
+
+        {/* Desktop View: 18px Tab Title + 12px Subtitle with tight leading */}
+        <div className="hidden lg:flex flex-col justify-center">
+          <h2 className="text-[18px] font-display font-bold text-[var(--color-text-primary)] leading-tight">
             {TAB_TITLES[activeTab]}
           </h2>
-          <span className="text-[10px] text-[var(--color-text-muted)] hidden sm:inline">
+          <p className="text-[12px] text-[var(--color-text-muted)] leading-tight mt-0.5">
             كتابة هادئة • تباين فائق • مزامنة سريعة
-          </span>
+          </p>
         </div>
       </div>
 
@@ -71,10 +79,10 @@ export const Header: React.FC<HeaderProps> = ({
           type="button"
           onClick={onToggleCustomization}
           className={cn(
-            "hidden lg:flex items-center gap-2 px-3.5 py-1.5 rounded-xl border text-xs font-semibold transition-all duration-200 select-none group",
+            "hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all duration-200 select-none group",
             isCustomizationOpen
               ? "bg-[var(--color-active-card)] text-[var(--color-accent-warm)] border-[var(--color-active-border)] shadow-[0_0_12px_var(--color-accent-glow)] font-bold scale-[1.02]"
-              : "bg-black/[0.04] dark:bg-white/[0.05] border-black/[0.06] dark:border-[var(--color-border-subtle)] text-[#5C5549] dark:text-[#DDD4C4] hover:text-[#1D1A16] dark:hover:text-[#FFFFFF] hover:border-[var(--color-active-border)]/40 hover:scale-[1.02] active:scale-[0.98]"
+              : "bg-black/[0.04] dark:bg-white/[0.05] border-black/[0.06] dark:border-white/[0.08] text-[#5C5549] dark:text-[#DDD4C4] hover:text-[#1D1A16] dark:hover:text-[#FFFFFF] hover:border-[var(--color-active-border)]/40 hover:scale-[1.02] active:scale-[0.98]"
           )}
           title="فتح/إغلاق لوحة تخصيص الخزينة"
         >
@@ -86,13 +94,13 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           type="button"
           onClick={onToggleTheme}
-          className="hidden lg:flex items-center justify-center p-2 rounded-xl bg-black/[0.04] dark:bg-white/[0.05] border border-black/[0.06] dark:border-[var(--color-border-subtle)] text-[#5C5549] dark:text-[var(--color-text-secondary)] hover:text-[#1D1A16] dark:hover:text-[#FFFFFF] transition-colors"
+          className="hidden lg:flex items-center justify-center w-8 h-8 rounded-xl bg-black/[0.04] dark:bg-white/[0.05] border border-black/[0.06] dark:border-white/[0.08] text-[#5C5549] dark:text-[var(--color-text-secondary)] hover:text-[#1D1A16] dark:hover:text-[#FFFFFF] transition-colors"
           title="تبديل المظهر (داكن / فاتح)"
         >
           {settings.theme === 'dark' ? (
-            <Moon className="w-4 h-4 text-[var(--color-accent-warm)]" />
+            <Moon className="w-3.5 h-3.5 text-[var(--color-accent-warm)]" />
           ) : (
-            <Sun className="w-4 h-4 text-amber-500" />
+            <Sun className="w-3.5 h-3.5 text-amber-500" />
           )}
         </button>
 
@@ -100,10 +108,10 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           type="button"
           onClick={onNavigateSettings}
-          className="hidden lg:flex items-center justify-center p-2 rounded-xl bg-black/[0.04] dark:bg-white/[0.05] border border-black/[0.06] dark:border-[var(--color-border-subtle)] text-[#5C5549] dark:text-[#DDD4C4] hover:text-[#1D1A16] dark:hover:text-[#FFFFFF] hover:border-[var(--color-active-border)]/40 transition-colors"
+          className="hidden lg:flex items-center justify-center w-8 h-8 rounded-xl bg-black/[0.04] dark:bg-white/[0.05] border border-black/[0.06] dark:border-white/[0.08] text-[#5C5549] dark:text-[#DDD4C4] hover:text-[#1D1A16] dark:hover:text-[#FFFFFF] hover:border-[var(--color-active-border)]/40 transition-colors"
           title="الإعدادات وحساب الكاتب"
         >
-          <Settings className="w-4 h-4" />
+          <Settings className="w-3.5 h-3.5" />
         </button>
 
         {/* User Account Pill (Desktop Only) */}
@@ -118,11 +126,11 @@ export const Header: React.FC<HeaderProps> = ({
           </span>
         </button>
 
-        {/* Standard Settings Gear Button (Mobile Only) */}
+        {/* Standard Settings Gear Button (Mobile Only - 32px matching the logo) */}
         <button
           type="button"
           onClick={onNavigateSettings}
-          className="lg:hidden p-2 rounded-xl bg-[var(--color-bg-card)] border border-[var(--color-border-subtle)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-active-border)]/40 transition-colors"
+          className="lg:hidden w-8 h-8 rounded-full flex items-center justify-center bg-[var(--color-bg-card)] border border-black/[0.06] dark:border-white/[0.08] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-active-border)]/40 transition-colors shadow-xs"
           title="الإعدادات وتخصيص الخزينة"
         >
           <Settings className="w-4 h-4 text-[var(--color-accent-warm)]" />

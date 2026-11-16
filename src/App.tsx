@@ -84,7 +84,7 @@ export const App: React.FC = () => {
         />
 
         {/* Dynamic Page Views */}
-        <main className="flex-1 px-4 md:px-8 pt-6 max-w-7xl w-full mx-auto">
+        <main className="flex-1 px-4 md:px-8 pt-3.5 md:pt-4 max-w-7xl w-full mx-auto">
           {activeTab === 'home' && (
             <HomeDashboard
               entries={entries}
