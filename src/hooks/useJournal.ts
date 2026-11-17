@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { JournalEntry, MoodType, UserStats } from '../types/journal';
-import { loadStoredEntries, saveStoredEntries } from '../lib/storage';
+import { loadStoredEntries, saveStoredEntries, purgeLegacyMockEntries } from '../lib/storage';
 import { fetchUserJournals, saveUserJournal, deleteUserJournal } from '../lib/supabaseService';
 import {
   getTodayISODate,
@@ -17,20 +17,16 @@ export function useJournal(userId?: string) {
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Load from Supabase when user logs in
+  // Load from Supabase when user logs in - Supabase is the single source of truth!
   useEffect(() => {
     if (!userId) return;
 
     let isMounted = true;
     fetchUserJournals(userId).then((remoteMap) => {
       if (!isMounted) return;
-      if (remoteMap && Object.keys(remoteMap).length > 0) {
-        setEntries((prev) => {
-          const merged = { ...prev, ...remoteMap };
-          saveStoredEntries(merged);
-          return merged;
-        });
-      }
+      const cleanRemoteMap = purgeLegacyMockEntries(remoteMap || {});
+      setEntries(cleanRemoteMap);
+      saveStoredEntries(cleanRemoteMap);
     });
 
     return () => {

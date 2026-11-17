@@ -39,16 +39,22 @@ export const QuickNotesView: React.FC<QuickNotesViewProps> = ({ user, onRequireA
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving'>('saved');
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Sync notes from Supabase when user logs in
+  // Sync notes from Supabase when user logs in - Supabase is the single source of truth!
   useEffect(() => {
     if (!user?.id) return;
     let isMounted = true;
     fetchUserNotes(user.id).then((remoteNotes) => {
       if (!isMounted) return;
-      if (remoteNotes && remoteNotes.length > 0) {
-        setNotes(remoteNotes);
-        saveStoredNotes(remoteNotes);
-      }
+      const cleanNotes = (remoteNotes || []).filter(n =>
+        n.id !== 'note-1' &&
+        n.id !== 'note-2' &&
+        n.title !== 'اقتباس اليوم الملهم' &&
+        n.title !== 'قائمة كتب الشتاء الهادئ' &&
+        !(n.content && n.content.includes('في مديح الظل - جونيشيرو')) &&
+        !(n.content && n.content.includes('إن الهدوء ليس غياب الفوضى'))
+      );
+      setNotes(cleanNotes);
+      saveStoredNotes(cleanNotes);
     });
     return () => {
       isMounted = false;

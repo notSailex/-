@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
-import { UserStats, MoodType, FocusSession, FocusSessionType } from '../../types/journal';
-import { loadStoredFocusSessions } from '../../lib/storage';
+import React, { useMemo, useState, useEffect } from 'react';
+import { UserStats, MoodType, FocusSession, FocusSessionType, UserProfile } from '../../types/journal';
+import { loadStoredFocusSessions, saveStoredFocusSessions } from '../../lib/storage';
+import { fetchUserFocusSessions } from '../../lib/supabaseService';
 import {
   MOOD_CONFIGS,
   toArabicNumerals,
@@ -31,11 +32,13 @@ import {
 interface StatsDashboardProps {
   stats: UserStats;
   onSelectDate: (date: string) => void;
+  user?: UserProfile | null;
 }
 
 export const StatsDashboard: React.FC<StatsDashboardProps> = ({
   stats,
   onSelectDate,
+  user,
 }) => {
   const {
     totalWordsWritten,
@@ -50,12 +53,41 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({
   const maxWords = Math.max(...sevenDayWordCounts.map(d => d.wordCount), 80);
 
   // Total recorded moods
-  const totalMoodLogs = Object.values(moodCounts).reduce((a, b) => a + b, 0) || 1;
+  const totalMoodLogs = Object.values(moodCounts).reduce((a, b) => a + b, 0);
 
   const moodKeys: MoodType[] = ['radiant', 'peaceful', 'neutral', 'exhausted', 'heavy'];
 
-  // Focus Sessions Analytics
-  const focusSessions = useMemo(() => loadStoredFocusSessions(), []);
+  // Focus Sessions Analytics - load from Supabase for logged-in user, discarding mock demo sessions
+  const [focusSessions, setFocusSessions] = useState<FocusSession[]>(() => {
+    return loadStoredFocusSessions().filter(s =>
+      s.id !== 'focus-1' &&
+      s.id !== 'focus-2' &&
+      s.id !== 'focus-3' &&
+      s.id !== 'focus-4'
+    );
+  });
+
+  useEffect(() => {
+    if (!user?.id) {
+      setFocusSessions([]);
+      return;
+    }
+    let isMounted = true;
+    fetchUserFocusSessions(user.id).then((remote) => {
+      if (!isMounted) return;
+      const clean = (remote || []).filter(s =>
+        s.id !== 'focus-1' &&
+        s.id !== 'focus-2' &&
+        s.id !== 'focus-3' &&
+        s.id !== 'focus-4'
+      );
+      setFocusSessions(clean);
+      saveStoredFocusSessions(clean);
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id]);
 
   const totalFocusMinutes = useMemo(() => {
     return focusSessions.reduce((acc, s) => acc + s.durationMinutes, 0);

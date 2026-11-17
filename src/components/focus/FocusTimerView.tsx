@@ -70,17 +70,22 @@ export const FocusTimerView: React.FC<FocusTimerViewProps> = ({ user, onRequireA
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Load user sessions from Supabase on mount / login
+  // Load user sessions from Supabase on mount / login - Supabase is the single source of truth!
   useEffect(() => {
     if (!user?.id) return;
     let isMounted = true;
     fetchUserFocusSessions(user.id).then((remoteSessions) => {
       if (!isMounted) return;
-      if (remoteSessions && remoteSessions.length > 0) {
-        saveStoredFocusSessions(remoteSessions);
-        const today = getTodayISODate();
-        setTodaySessions(remoteSessions.filter(s => s.date === today));
-      }
+      const cleanSessions = (remoteSessions || []).filter(s =>
+        s.id !== 'focus-1' &&
+        s.id !== 'focus-2' &&
+        s.id !== 'focus-3' &&
+        s.id !== 'focus-4' &&
+        !['focus-1', 'focus-2', 'focus-3', 'focus-4'].includes(s.id)
+      );
+      saveStoredFocusSessions(cleanSessions);
+      const today = getTodayISODate();
+      setTodaySessions(cleanSessions.filter(s => s.date === today));
     });
     return () => {
       isMounted = false;

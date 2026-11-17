@@ -16,6 +16,7 @@ import { AdminControlCenter } from './components/admin/AdminControlCenter';
 import { AuthModal } from './components/auth/AuthModal';
 import { CustomizationDrawer } from './components/settings/CustomizationDrawer';
 import { loadStoredAnnouncement } from './lib/supabaseService';
+import { purgeLegacyMockData } from './lib/storage';
 import { Megaphone, X, Clock } from 'lucide-react';
 
 export const App: React.FC = () => {
@@ -25,6 +26,11 @@ export const App: React.FC = () => {
   const [announcement, setAnnouncement] = useState(() => loadStoredAnnouncement());
   const [isAnnouncementDismissed, setIsAnnouncementDismissed] = useState(false);
   const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
+
+  // Auto clean legacy mock demo data
+  React.useEffect(() => {
+    purgeLegacyMockData();
+  }, []);
 
   // Listen to live broadcast announcement updates across components
   React.useEffect(() => {
@@ -262,6 +268,7 @@ export const App: React.FC = () => {
             <StatsDashboard
               stats={stats}
               onSelectDate={handleSelectDateFromCalendar}
+              user={user}
             />
           )}
 
