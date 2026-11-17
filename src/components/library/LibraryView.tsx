@@ -1,9 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookItem, ReadingStatus, UserProfile } from '../../types/journal';
 import { loadStoredBooks, saveStoredBooks } from '../../lib/storage';
 import { compressImage, toArabicNumerals } from '../../lib/utils';
-import { fetchUserBooks, saveUserBook, deleteUserBook, uploadMediaToStorage, loadStoredFeaturedBooks } from '../../lib/supabaseService';
+import {
+  fetchUserBooks,
+  saveUserBook,
+  deleteUserBook,
+  uploadMediaToStorage,
+  loadStoredFeaturedBooks,
+  loadVisibleFeaturedBooks,
+  dismissFeaturedBookId,
+  saveStoredFeaturedBooks,
+} from '../../lib/supabaseService';
 import {
   Library,
   Plus,
@@ -61,13 +71,28 @@ interface LibraryViewProps {
 
 export const LibraryView: React.FC<LibraryViewProps> = ({ user, onRequireAuth }) => {
   const [books, setBooks] = useState<BookItem[]>(() => loadStoredBooks());
-  const [featuredBooks] = useState<BookItem[]>(() => loadStoredFeaturedBooks());
+  const [featuredBooks, setFeaturedBooks] = useState<BookItem[]>(() => loadVisibleFeaturedBooks());
   const [activeFilter, setActiveFilter] = useState<FilterStatus>('all');
 
   // Modals state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingBookId, setEditingBookId] = useState<string | null>(null);
   const [selectedBookForDetails, setSelectedBookForDetails] = useState<BookItem | null>(null);
+
+  // Helper: check if a book is from featured / admin recommendations
+  const isFeaturedBook = (bookId?: string | null): boolean => {
+    if (!bookId) return false;
+    return bookId.startsWith('featured-') || featuredBooks.some(fb => fb.id === bookId);
+  };
+
+  // Sync featured books when updated across tabs/admin
+  useEffect(() => {
+    const handleFeaturedUpdate = () => {
+      setFeaturedBooks(loadVisibleFeaturedBooks());
+    };
+    window.addEventListener('trmez_featured_books_updated', handleFeaturedUpdate);
+    return () => window.removeEventListener('trmez_featured_books_updated', handleFeaturedUpdate);
+  }, []);
 
   // Form state
   const [formTitle, setFormTitle] = useState('');
@@ -252,8 +277,30 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ user, onRequireAuth })
     setIsAddModalOpen(false);
   };
 
-  // Delete Book
+  // Delete or Dismiss Book
   const handleDeleteBook = async (id: string) => {
+    const isFeatured = isFeaturedBook(id);
+
+    if (isFeatured) {
+      if (user?.role === 'admin') {
+        if (confirm('هل أنت متأكد من حذف هذا الكتاب المقترح نهائياً من ترشيحات الجميع؟')) {
+          const currentAll = loadStoredFeaturedBooks().filter(b => b.id !== id);
+          saveStoredFeaturedBooks(currentAll);
+          setFeaturedBooks(prev => prev.filter(b => b.id !== id));
+          window.dispatchEvent(new CustomEvent('trmez_featured_books_updated'));
+          setSelectedBookForDetails(null);
+        }
+      } else {
+        if (confirm('هل تريد إزالة هذا الكتاب المقترح من قائمتك؟')) {
+          dismissFeaturedBookId(id);
+          setFeaturedBooks(prev => prev.filter(b => b.id !== id));
+          setSelectedBookForDetails(null);
+        }
+      }
+      return;
+    }
+
+    // Normal personal book
     if (!user) {
       onRequireAuth?.();
       return;
@@ -476,9 +523,9 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ user, onRequireAuth })
       {/* ========================================================
           نافذة إضافة / تعديل كتاب (Add / Edit Book Modal)
           ======================================================== */}
-      {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
-          <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-[var(--color-bg-surface)] dark:bg-[var(--color-bg-card)] rounded-3xl border border-[var(--color-border-subtle)] shadow-2xl p-6 sm:p-8">
+      {isAddModalOpen && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/75 backdrop-blur-sm overflow-y-auto animate-fade-in">
+          <div className="relative w-full max-w-lg my-auto max-h-[90vh] overflow-y-auto bg-[var(--color-bg-surface)] dark:bg-[var(--color-bg-card)] rounded-3xl border border-[var(--color-border-subtle)] shadow-2xl p-6 sm:p-8">
             <button
               type="button"
               onClick={() => setIsAddModalOpen(false)}
@@ -685,50 +732,61 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ user, onRequireAuth })
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ========================================================
           نافذة عرض التفاصيل الكاملة للكتاب (Book Details Card Modal)
           ======================================================== */}
-      {selectedBookForDetails && (
+      {selectedBookForDetails && createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto animate-fade-in"
           onClick={() => setSelectedBookForDetails(null)}
         >
           <div
-            className="relative w-full max-w-xl bg-[var(--color-bg-surface)] dark:bg-[var(--color-bg-card)] rounded-3xl border border-[var(--color-border-subtle)] shadow-2xl p-6 sm:p-8 overflow-hidden"
+            className="relative w-full max-w-lg my-auto max-h-[90vh] overflow-y-auto bg-[var(--color-bg-surface)] dark:bg-[var(--color-bg-card)] rounded-3xl border border-[var(--color-border-subtle)] shadow-2xl p-5 sm:p-7 text-right"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close */}
+            {/* Close Button */}
             <button
               type="button"
               onClick={() => setSelectedBookForDetails(null)}
-              className="absolute top-5 left-5 p-1.5 rounded-full text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-black/[0.05] dark:hover:bg-white/[0.08] transition-colors"
+              className="absolute top-4 left-4 p-2 rounded-full text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-black/[0.05] dark:hover:bg-white/[0.08] transition-colors"
+              title="إغلاق"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <div className="flex flex-col sm:flex-row gap-6">
-              {/* Cover with 3D Spine and glow */}
-              <div className="w-32 sm:w-40 aspect-[2/3] rounded-2xl overflow-hidden border border-white/10 shadow-2xl shrink-0 mx-auto sm:mx-0">
+            <div className="flex flex-row gap-4 sm:gap-6 items-start">
+              {/* Cover with fallback */}
+              <div className="w-24 sm:w-36 aspect-[2/3] rounded-2xl overflow-hidden border border-white/10 shadow-xl shrink-0 bg-black/10 dark:bg-white/5">
                 <img
                   src={selectedBookForDetails.coverImage}
                   alt={selectedBookForDetails.title}
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = DEFAULT_COVER_PRESETS[0];
+                  }}
                 />
               </div>
 
               {/* Book Info */}
-              <div className="flex-1 space-y-3">
-                <div className="flex items-center gap-2">
+              <div className="flex-1 space-y-2 overflow-hidden">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className={cn(
-                    "px-2.5 py-1 rounded-lg text-xs font-bold border",
+                    "px-2.5 py-0.5 rounded-lg text-[11px] font-bold border",
                     STATUS_CONFIG[selectedBookForDetails.status].bg,
                     STATUS_CONFIG[selectedBookForDetails.status].color
                   )}>
                     {STATUS_CONFIG[selectedBookForDetails.status].label}
                   </span>
+
+                  {isFeaturedBook(selectedBookForDetails.id) && (
+                    <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-500/15 text-amber-500 border border-amber-500/30">
+                      ترشيح الإدارة ★
+                    </span>
+                  )}
 
                   {selectedBookForDetails.rating && (
                     <div className="flex items-center gap-1 text-amber-400 text-xs font-bold">
@@ -738,7 +796,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ user, onRequireAuth })
                   )}
                 </div>
 
-                <h3 className="text-xl sm:text-2xl font-serif font-bold text-[var(--color-text-primary)]">
+                <h3 className="text-lg sm:text-xl font-serif font-bold text-[var(--color-text-primary)] leading-snug">
                   {selectedBookForDetails.title}
                 </h3>
 
@@ -754,41 +812,49 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ user, onRequireAuth })
                     <span>تاريخ الانتهاء: {selectedBookForDetails.finishedDate}</span>
                   </p>
                 )}
-
-                {/* Literary Summary / Review */}
-                {selectedBookForDetails.summary && (
-                  <div className="mt-3 p-3.5 rounded-2xl bg-black/[0.02] dark:bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] text-xs text-[var(--color-text-secondary)] font-text leading-relaxed">
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-accent-warm)] mb-1">
-                      ملخص ورأي القارئ
-                    </div>
-                    {selectedBookForDetails.summary}
-                  </div>
-                )}
               </div>
             </div>
 
+            {/* Literary Summary / Review */}
+            {selectedBookForDetails.summary && (
+              <div className="mt-4 p-3.5 rounded-2xl bg-black/[0.02] dark:bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] text-xs text-[var(--color-text-secondary)] font-text leading-relaxed max-h-36 overflow-y-auto">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-accent-warm)] mb-1">
+                  ملخص ورأي القارئ
+                </div>
+                {selectedBookForDetails.summary}
+              </div>
+            )}
+
             {/* Actions: Edit & Delete */}
-            <div className="mt-6 pt-4 border-t border-[var(--color-border-subtle)] flex items-center justify-between">
+            <div className="mt-5 pt-4 border-t border-[var(--color-border-subtle)] flex items-center justify-between">
               <button
                 type="button"
                 onClick={() => handleDeleteBook(selectedBookForDetails.id)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-rose-500/20 text-rose-500 text-xs font-semibold hover:bg-rose-500/10 transition-colors"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-rose-500/20 text-rose-500 text-xs font-semibold hover:bg-rose-500/10 transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                <span>حذف الكتاب</span>
+                <span>
+                  {isFeaturedBook(selectedBookForDetails.id)
+                    ? (user?.role === 'admin' ? 'حذف الترشيح للجميع' : 'إزالة من الترشيحات')
+                    : 'حذف الكتاب'}
+                </span>
               </button>
 
-              <button
-                type="button"
-                onClick={() => handleOpenEditModal(selectedBookForDetails)}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-black/[0.04] dark:bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] hover:border-[var(--color-active-border)]/50 text-xs font-semibold text-[var(--color-text-primary)] transition-all"
-              >
-                <Edit3 className="w-3.5 h-3.5 text-[var(--color-accent-warm)]" />
-                <span>تعديل التفاصيل</span>
-              </button>
+              {/* Show "تعديل التفاصيل" ONLY for personal books (NOT for featured/recommended books) */}
+              {!isFeaturedBook(selectedBookForDetails.id) && (
+                <button
+                  type="button"
+                  onClick={() => handleOpenEditModal(selectedBookForDetails)}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-black/[0.04] dark:bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] hover:border-[var(--color-active-border)]/50 text-xs font-semibold text-[var(--color-text-primary)] transition-all"
+                >
+                  <Edit3 className="w-3.5 h-3.5 text-[var(--color-accent-warm)]" />
+                  <span>تعديل التفاصيل</span>
+                </button>
+              )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

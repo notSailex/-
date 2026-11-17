@@ -713,6 +713,8 @@ export function saveStoredAnnouncement(announcement: GlobalAnnouncement | null):
   }
 }
 
+const STORAGE_KEY_DISMISSED_FEATURED_BOOKS = 'trmez_dismissed_featured_books';
+
 export function loadStoredFeaturedBooks(): BookItem[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_FEATURED_BOOKS);
@@ -721,6 +723,34 @@ export function loadStoredFeaturedBooks(): BookItem[] {
   } catch {
     return [];
   }
+}
+
+export function loadDismissedFeaturedBookIds(): string[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_DISMISSED_FEATURED_BOOKS);
+    if (!raw) return [];
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+export function dismissFeaturedBookId(bookId: string): void {
+  try {
+    const list = loadDismissedFeaturedBookIds();
+    if (!list.includes(bookId)) {
+      list.push(bookId);
+      localStorage.setItem(STORAGE_KEY_DISMISSED_FEATURED_BOOKS, JSON.stringify(list));
+    }
+  } catch (err) {
+    console.error('Error dismissing featured book:', err);
+  }
+}
+
+export function loadVisibleFeaturedBooks(): BookItem[] {
+  const all = loadStoredFeaturedBooks();
+  const dismissed = loadDismissedFeaturedBookIds();
+  return all.filter(b => !dismissed.includes(b.id));
 }
 
 export function saveStoredFeaturedBooks(books: BookItem[]): void {

@@ -187,6 +187,7 @@ export const AdminControlCenter: React.FC<AdminControlCenterProps> = ({
     const updated = [bookItem, ...featuredBooks];
     setFeaturedBooks(updated);
     saveStoredFeaturedBooks(updated);
+    window.dispatchEvent(new CustomEvent('trmez_featured_books_updated'));
     setNewBookTitle('');
     setNewBookAuthor('');
     setNewBookSummary('');
@@ -196,6 +197,7 @@ export const AdminControlCenter: React.FC<AdminControlCenterProps> = ({
     const updated = featuredBooks.filter(b => b.id !== bookId);
     setFeaturedBooks(updated);
     saveStoredFeaturedBooks(updated);
+    window.dispatchEvent(new CustomEvent('trmez_featured_books_updated'));
   };
 
   // Export full diagnostic report
