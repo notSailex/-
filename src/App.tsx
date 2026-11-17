@@ -16,7 +16,7 @@ import { AdminControlCenter } from './components/admin/AdminControlCenter';
 import { AuthModal } from './components/auth/AuthModal';
 import { CustomizationDrawer } from './components/settings/CustomizationDrawer';
 import { loadStoredAnnouncement } from './lib/supabaseService';
-import { Megaphone, X } from 'lucide-react';
+import { Megaphone, X, Clock } from 'lucide-react';
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
@@ -24,6 +24,7 @@ export const App: React.FC = () => {
   const [isCustomizationOpen, setIsCustomizationOpen] = useState(false);
   const [announcement, setAnnouncement] = useState(() => loadStoredAnnouncement());
   const [isAnnouncementDismissed, setIsAnnouncementDismissed] = useState(false);
+  const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
 
   // Listen to live broadcast announcement updates across components
   React.useEffect(() => {
@@ -36,6 +37,42 @@ export const App: React.FC = () => {
     window.addEventListener('trmez_announcement_updated', handleBroadcastUpdate);
     return () => window.removeEventListener('trmez_announcement_updated', handleBroadcastUpdate);
   }, []);
+
+  // Auto-dismiss countdown timer when expiresAt is set
+  React.useEffect(() => {
+    if (!announcement?.expiresAt || !announcement.isActive) {
+      setRemainingSeconds(null);
+      return;
+    }
+
+    const calculateRemaining = () => {
+      const diffMs = new Date(announcement.expiresAt!).getTime() - Date.now();
+      const secs = Math.ceil(diffMs / 1000);
+      return secs > 0 ? secs : 0;
+    };
+
+    const initial = calculateRemaining();
+    if (initial <= 0) {
+      setAnnouncement(null);
+      setRemainingSeconds(null);
+      return;
+    }
+
+    setRemainingSeconds(initial);
+
+    const interval = setInterval(() => {
+      const left = calculateRemaining();
+      if (left <= 0) {
+        clearInterval(interval);
+        setAnnouncement(null);
+        setRemainingSeconds(null);
+      } else {
+        setRemainingSeconds(left);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [announcement]);
 
   // Core Hooks & Live Customization State
   const {
@@ -107,7 +144,7 @@ export const App: React.FC = () => {
         {/* Global Broadcast Announcement */}
         {announcement && announcement.isActive && !isAnnouncementDismissed && (
           <div className="w-full px-4 md:px-8 pt-3 max-w-7xl mx-auto">
-            <div className={`p-3 md:p-3.5 rounded-2xl border flex items-center justify-between gap-3 text-xs shadow-md animate-fade-in ${
+            <div className={`p-3 md:p-3.5 rounded-2xl border flex items-center justify-between gap-3 text-xs shadow-md animate-fade-in relative overflow-hidden ${
               announcement.type === 'golden'
                 ? 'bg-gradient-to-r from-amber-500/20 via-[var(--color-bg-card)] to-amber-600/15 border-amber-500/40 text-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.15)]'
                 : announcement.type === 'alert'
@@ -119,27 +156,54 @@ export const App: React.FC = () => {
                   <Megaphone className="w-4 h-4 fill-current animate-pulse" />
                 </div>
                 <div className="overflow-hidden">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-display font-black text-sm text-[var(--color-text-primary)]">
                       {announcement.title}
                     </span>
-                    <span className="px-2 py-0.2 rounded-full text-[9px] font-bold bg-amber-500/20 text-amber-400 border border-amber-400/30">
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/20 text-amber-400 border border-amber-400/30">
                       إعلان عام من الإدارة
                     </span>
+                    {remainingSeconds !== null && (
+                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-black/10 dark:bg-white/10 text-[var(--color-text-primary)] border border-black/10 dark:border-white/10">
+                        <Clock className="w-3 h-3 text-amber-400 animate-spin" style={{ animationDuration: '4s' }} />
+                        <span>
+                          {remainingSeconds < 60
+                            ? `يختفي خلال ${remainingSeconds} ث`
+                            : `يختفي خلال ${Math.floor(remainingSeconds / 60)}:${(remainingSeconds % 60).toString().padStart(2, '0')}`}
+                        </span>
+                      </span>
+                    )}
                   </div>
-                  <p className="text-xs text-[var(--color-text-secondary)] font-text mt-0.5 truncate">
+                  <p className="text-xs text-[var(--color-text-secondary)] font-text mt-0.5">
                     {announcement.message}
                   </p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsAnnouncementDismissed(true)}
-                className="p-1.5 rounded-xl text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-black/[0.05] dark:hover:bg-white/[0.08] transition-colors shrink-0"
-                title="إخفاء الإعلان"
-              >
-                <X className="w-4 h-4" />
-              </button>
+
+              {/* Immediate Dismiss / Close Button */}
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsAnnouncementDismissed(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-[var(--color-text-primary)] transition-all text-[11px] font-bold cursor-pointer shadow-xs"
+                  title="إغلاق الإعلان فوراً"
+                >
+                  <span>إغلاق</span>
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {/* Progress bar counting down if duration is set */}
+              {announcement.durationSeconds && announcement.durationSeconds > 0 && remainingSeconds !== null && (
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/10 dark:bg-white/10 overflow-hidden">
+                  <div
+                    className="h-full bg-amber-500 transition-all duration-1000 ease-linear"
+                    style={{
+                      width: `${Math.min(100, Math.max(0, (remainingSeconds / announcement.durationSeconds) * 100))}%`,
+                    }}
+                  />
+                </div>
+              )}
             </div>
           </div>
         )}

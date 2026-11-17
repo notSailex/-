@@ -617,6 +617,8 @@ export interface GlobalAnnouncement {
   message: string;
   type: 'info' | 'golden' | 'alert';
   isActive: boolean;
+  durationSeconds?: number;
+  expiresAt?: string;
   updatedAt: string;
   authorName?: string;
 }
@@ -688,7 +690,12 @@ export function loadStoredAnnouncement(): GlobalAnnouncement | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_ANNOUNCEMENT);
     if (!raw) return null;
-    return JSON.parse(raw);
+    const ann: GlobalAnnouncement = JSON.parse(raw);
+    if (!ann) return null;
+    if (ann.expiresAt && new Date(ann.expiresAt).getTime() <= Date.now()) {
+      return null;
+    }
+    return ann;
   } catch {
     return null;
   }

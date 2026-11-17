@@ -78,10 +78,12 @@ export const AdminControlCenter: React.FC<AdminControlCenterProps> = ({
       message: 'نسخة سحابية جديدة بهدوء تام، وتشفير كامل ليومياتكم وقراءاتكم.',
       type: 'golden',
       isActive: true,
+      durationSeconds: 30,
       updatedAt: new Date().toISOString(),
       authorName: user?.name || 'إدارة تِرميز',
     };
   });
+  const [durationSeconds, setDurationSeconds] = useState<number>(() => announcement.durationSeconds || 30);
   const [announcementSavedToast, setAnnouncementSavedToast] = useState(false);
 
   // Featured books states
@@ -146,8 +148,12 @@ export const AdminControlCenter: React.FC<AdminControlCenterProps> = ({
   // Save Announcement
   const handleSaveAnnouncement = (e: React.FormEvent) => {
     e.preventDefault();
+    const duration = Number(durationSeconds);
+    const expiresAt = duration > 0 ? new Date(Date.now() + duration * 1000).toISOString() : undefined;
     const updated: GlobalAnnouncement = {
       ...announcement,
+      durationSeconds: duration,
+      expiresAt,
       updatedAt: new Date().toISOString(),
       authorName: user?.name || 'إدارة تِرميز',
     };
@@ -661,6 +667,124 @@ export const AdminControlCenter: React.FC<AdminControlCenterProps> = ({
                   >
                     ⚠️ تنبيه مهم
                   </button>
+                </div>
+              </div>
+
+              {/* Duration Settings */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-[var(--color-text-muted)] font-semibold flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-amber-500" />
+                    <span>مدة بقاء الإعلان (يختفي تلقائياً بعدها)</span>
+                  </label>
+                  <span className="text-[11px] font-bold text-amber-500 font-sans">
+                    {durationSeconds === 0
+                      ? 'دائم (حتى تغلقه يدوياً)'
+                      : durationSeconds < 60
+                      ? `${durationSeconds} ثوانٍ`
+                      : durationSeconds < 3600
+                      ? `${Math.round(durationSeconds / 60)} دقيقة`
+                      : `${Math.round(durationSeconds / 3600)} ساعة`}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-4 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setDurationSeconds(10)}
+                    className={`py-1.5 px-2 rounded-xl border text-[11px] font-bold transition-all ${
+                      durationSeconds === 10
+                        ? 'bg-amber-500 text-black border-amber-500'
+                        : 'border-black/[0.08] dark:border-white/[0.08] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'
+                    }`}
+                  >
+                    10 ثوانٍ
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDurationSeconds(30)}
+                    className={`py-1.5 px-2 rounded-xl border text-[11px] font-bold transition-all ${
+                      durationSeconds === 30
+                        ? 'bg-amber-500 text-black border-amber-500'
+                        : 'border-black/[0.08] dark:border-white/[0.08] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'
+                    }`}
+                  >
+                    30 ثانية
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDurationSeconds(60)}
+                    className={`py-1.5 px-2 rounded-xl border text-[11px] font-bold transition-all ${
+                      durationSeconds === 60
+                        ? 'bg-amber-500 text-black border-amber-500'
+                        : 'border-black/[0.08] dark:border-white/[0.08] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'
+                    }`}
+                  >
+                    دقيقة واحدة
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDurationSeconds(300)}
+                    className={`py-1.5 px-2 rounded-xl border text-[11px] font-bold transition-all ${
+                      durationSeconds === 300
+                        ? 'bg-amber-500 text-black border-amber-500'
+                        : 'border-black/[0.08] dark:border-white/[0.08] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'
+                    }`}
+                  >
+                    5 دقائق
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDurationSeconds(3600)}
+                    className={`py-1.5 px-2 rounded-xl border text-[11px] font-bold transition-all ${
+                      durationSeconds === 3600
+                        ? 'bg-amber-500 text-black border-amber-500'
+                        : 'border-black/[0.08] dark:border-white/[0.08] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'
+                    }`}
+                  >
+                    ساعة واحدة
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDurationSeconds(86400)}
+                    className={`py-1.5 px-2 rounded-xl border text-[11px] font-bold transition-all ${
+                      durationSeconds === 86400
+                        ? 'bg-amber-500 text-black border-amber-500'
+                        : 'border-black/[0.08] dark:border-white/[0.08] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'
+                    }`}
+                  >
+                    يوم كامل
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDurationSeconds(0)}
+                    className={`py-1.5 px-2 rounded-xl border text-[11px] font-bold col-span-2 transition-all ${
+                      durationSeconds === 0
+                        ? 'bg-amber-500 text-black border-amber-500'
+                        : 'border-black/[0.08] dark:border-white/[0.08] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'
+                    }`}
+                  >
+                    دائم (حتى توقفه يدوياً)
+                  </button>
+                </div>
+
+                {/* Custom duration in seconds */}
+                <div className="flex items-center justify-between gap-3 mt-2.5 p-2 rounded-xl bg-black/[0.02] dark:bg-black/20 border border-black/[0.05] dark:border-white/[0.05]">
+                  <span className="text-[11px] text-[var(--color-text-muted)] font-medium">أو حدد مدة مخصصة بالثواني:</span>
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="number"
+                      min="0"
+                      value={durationSeconds || ''}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value, 10);
+                        setDurationSeconds(isNaN(val) || val < 0 ? 0 : val);
+                      }}
+                      placeholder="0 = دائم"
+                      className="w-24 px-2.5 py-1 rounded-lg bg-black/[0.04] dark:bg-black/40 border border-black/10 dark:border-white/10 text-xs text-center font-mono text-[var(--color-text-primary)] focus:outline-none focus:border-amber-500"
+                    />
+                    <span className="text-[11px] text-[var(--color-text-muted)]">ثانية</span>
+                  </div>
                 </div>
               </div>
 
