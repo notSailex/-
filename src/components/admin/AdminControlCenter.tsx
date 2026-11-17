@@ -46,6 +46,7 @@ interface AdminControlCenterProps {
   settings: AppSettings;
   onNavigateTab: (tab: any) => void;
   onRefreshUserData?: () => void;
+  onUpdateAnnouncement?: (announcement: GlobalAnnouncement) => void;
 }
 
 type AdminSubTab = 'overview' | 'users' | 'broadcast' | 'featured_books';
@@ -55,6 +56,7 @@ export const AdminControlCenter: React.FC<AdminControlCenterProps> = ({
   settings,
   onNavigateTab,
   onRefreshUserData,
+  onUpdateAnnouncement,
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<AdminSubTab>('overview');
 
@@ -151,8 +153,12 @@ export const AdminControlCenter: React.FC<AdminControlCenterProps> = ({
     };
     setAnnouncement(updated);
     saveStoredAnnouncement(updated);
+    window.dispatchEvent(new CustomEvent('trmez_announcement_updated', { detail: updated }));
+    if (onUpdateAnnouncement) {
+      onUpdateAnnouncement(updated);
+    }
     setAnnouncementSavedToast(true);
-    setTimeout(() => setAnnouncementSavedToast(false), 3000);
+    setTimeout(() => setAnnouncementSavedToast(false), 4500);
   };
 
   // Add Featured Book
@@ -573,9 +579,18 @@ export const AdminControlCenter: React.FC<AdminControlCenterProps> = ({
             </div>
 
             {announcementSavedToast && (
-              <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-600 dark:text-emerald-400 text-xs flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 shrink-0" />
-                <span>تم تحديث ونشر الإعلان العام بنجاح!</span>
+              <div className="p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs flex items-center justify-between gap-3 animate-fade-in">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />
+                  <span className="font-bold">تم نشر الإعلان بنجاح في الشريط العلوي!</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onNavigateTab('home')}
+                  className="px-3 py-1 rounded-xl bg-emerald-500 text-white font-bold hover:opacity-90 transition-opacity text-[11px] shrink-0"
+                >
+                  الذهاب للرئيسية ←
+                </button>
               </div>
             )}
 

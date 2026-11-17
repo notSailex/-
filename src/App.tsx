@@ -22,8 +22,20 @@ export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isCustomizationOpen, setIsCustomizationOpen] = useState(false);
-  const [announcement] = useState(() => loadStoredAnnouncement());
+  const [announcement, setAnnouncement] = useState(() => loadStoredAnnouncement());
   const [isAnnouncementDismissed, setIsAnnouncementDismissed] = useState(false);
+
+  // Listen to live broadcast announcement updates across components
+  React.useEffect(() => {
+    const handleBroadcastUpdate = (e: any) => {
+      if (e.detail) {
+        setAnnouncement(e.detail);
+        setIsAnnouncementDismissed(false);
+      }
+    };
+    window.addEventListener('trmez_announcement_updated', handleBroadcastUpdate);
+    return () => window.removeEventListener('trmez_announcement_updated', handleBroadcastUpdate);
+  }, []);
 
   // Core Hooks & Live Customization State
   const {
@@ -95,26 +107,35 @@ export const App: React.FC = () => {
         {/* Global Broadcast Announcement */}
         {announcement && announcement.isActive && !isAnnouncementDismissed && (
           <div className="w-full px-4 md:px-8 pt-3 max-w-7xl mx-auto">
-            <div className={`p-3 md:p-3.5 rounded-2xl border flex items-center justify-between gap-3 text-xs shadow-xs animate-fade-in ${
+            <div className={`p-3 md:p-3.5 rounded-2xl border flex items-center justify-between gap-3 text-xs shadow-md animate-fade-in ${
               announcement.type === 'golden'
-                ? 'bg-gradient-to-r from-amber-500/15 via-[var(--color-bg-card)] to-amber-600/10 border-amber-500/30 text-amber-600 dark:text-amber-400'
+                ? 'bg-gradient-to-r from-amber-500/20 via-[var(--color-bg-card)] to-amber-600/15 border-amber-500/40 text-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.15)]'
                 : announcement.type === 'alert'
-                ? 'bg-rose-500/10 border-rose-500/25 text-rose-600 dark:text-rose-400'
-                : 'bg-blue-500/10 border-blue-500/25 text-blue-600 dark:text-blue-400'
+                ? 'bg-gradient-to-r from-rose-500/20 via-[var(--color-bg-card)] to-rose-600/15 border-rose-500/35 text-rose-400'
+                : 'bg-gradient-to-r from-blue-500/20 via-[var(--color-bg-card)] to-blue-600/15 border-blue-500/35 text-blue-400'
             }`}>
-              <div className="flex items-center gap-2.5 overflow-hidden">
-                <div className="w-7 h-7 rounded-xl bg-amber-500/20 flex items-center justify-center shrink-0 text-amber-500">
-                  <Megaphone className="w-3.5 h-3.5" />
+              <div className="flex items-center gap-3 overflow-hidden">
+                <div className="w-8 h-8 rounded-xl bg-amber-500 text-black flex items-center justify-center shrink-0 shadow-xs">
+                  <Megaphone className="w-4 h-4 fill-current animate-pulse" />
                 </div>
-                <div className="truncate">
-                  <span className="font-bold ml-1.5">{announcement.title}:</span>
-                  <span className="text-[var(--color-text-secondary)]">{announcement.message}</span>
+                <div className="overflow-hidden">
+                  <div className="flex items-center gap-2">
+                    <span className="font-display font-black text-sm text-[var(--color-text-primary)]">
+                      {announcement.title}
+                    </span>
+                    <span className="px-2 py-0.2 rounded-full text-[9px] font-bold bg-amber-500/20 text-amber-400 border border-amber-400/30">
+                      إعلان عام من الإدارة
+                    </span>
+                  </div>
+                  <p className="text-xs text-[var(--color-text-secondary)] font-text mt-0.5 truncate">
+                    {announcement.message}
+                  </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsAnnouncementDismissed(true)}
-                className="p-1 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-black/[0.05] dark:hover:bg-white/[0.05] transition-colors shrink-0"
+                className="p-1.5 rounded-xl text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-black/[0.05] dark:hover:bg-white/[0.08] transition-colors shrink-0"
                 title="إخفاء الإعلان"
               >
                 <X className="w-4 h-4" />
@@ -201,6 +222,10 @@ export const App: React.FC = () => {
               user={user}
               settings={settings}
               onNavigateTab={setActiveTab}
+              onUpdateAnnouncement={(updated) => {
+                setAnnouncement(updated);
+                setIsAnnouncementDismissed(false);
+              }}
             />
           )}
         </main>
