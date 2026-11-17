@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { BookItem, ReadingStatus, UserProfile } from '../../types/journal';
 import { loadStoredBooks, saveStoredBooks } from '../../lib/storage';
 import { compressImage, toArabicNumerals } from '../../lib/utils';
-import { fetchUserBooks, saveUserBook, deleteUserBook, uploadMediaToStorage } from '../../lib/supabaseService';
+import { fetchUserBooks, saveUserBook, deleteUserBook, uploadMediaToStorage, loadStoredFeaturedBooks } from '../../lib/supabaseService';
 import {
   Library,
   Plus,
@@ -61,6 +61,7 @@ interface LibraryViewProps {
 
 export const LibraryView: React.FC<LibraryViewProps> = ({ user, onRequireAuth }) => {
   const [books, setBooks] = useState<BookItem[]>(() => loadStoredBooks());
+  const [featuredBooks] = useState<BookItem[]>(() => loadStoredFeaturedBooks());
   const [activeFilter, setActiveFilter] = useState<FilterStatus>('all');
 
   // Modals state
@@ -299,6 +300,42 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ user, onRequireAuth })
           </button>
         </div>
       </div>
+
+      {/* Admin Featured Picks */}
+      {featuredBooks.length > 0 && (
+        <div className="p-5 rounded-3xl bg-gradient-to-r from-amber-500/10 via-[var(--color-bg-surface)] to-amber-600/10 border border-amber-500/25 shadow-sm space-y-3">
+          <div className="flex items-center gap-2 text-xs font-bold text-amber-500">
+            <Star className="w-4 h-4 fill-current" />
+            <span>ترشيحات تِرميز للقراءة (اختيار الإدارة)</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            {featuredBooks.map((fb) => (
+              <div
+                key={fb.id}
+                onClick={() => setSelectedBookForDetails(fb)}
+                className="p-3 rounded-2xl bg-black/[0.02] dark:bg-black/40 border border-black/[0.06] dark:border-white/[0.08] hover:border-amber-500/40 transition-all cursor-pointer flex items-center gap-3 group"
+              >
+                <img
+                  src={fb.coverImage}
+                  alt={fb.title}
+                  className="w-12 h-16 object-cover rounded-xl shadow-xs shrink-0 group-hover:scale-105 transition-transform"
+                />
+                <div className="overflow-hidden">
+                  <div className="text-xs font-bold text-[var(--color-text-primary)] truncate">
+                    {fb.title}
+                  </div>
+                  <div className="text-[10px] text-[var(--color-text-muted)] truncate">
+                    {fb.author || 'مؤلف غير معروف'}
+                  </div>
+                  <div className="text-[9px] text-amber-500 font-semibold mt-1">
+                    ترشيح معتمد ★
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Filter Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">

@@ -17,6 +17,7 @@ interface HeaderProps {
   activeTab: ActiveTab;
   onNavigateSettings: () => void;
   onNavigateLibrary?: () => void;
+  onNavigateAdmin?: () => void;
   onOpenAuth: () => void;
   user: UserProfile | null;
   settings: AppSettings;
@@ -33,12 +34,14 @@ const TAB_TITLES: Record<ActiveTab, string> = {
   focus: 'جلسات التركيز',
   stats: 'لوحة الإحصاءات والنبض',
   profile: 'الإعدادات وتخصيص الخزينة',
+  admin: 'مركز إدارة النظام (VIP)',
 };
 
 export const Header: React.FC<HeaderProps> = ({
   activeTab,
   onNavigateSettings,
   onNavigateLibrary,
+  onNavigateAdmin,
   onOpenAuth,
   user,
   settings,
@@ -123,8 +126,15 @@ export const Header: React.FC<HeaderProps> = ({
         {/* User Account Pill (Desktop Only) */}
         <button
           type="button"
-          onClick={onOpenAuth}
-          className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--color-accent-warm)]/10 border border-[var(--color-accent-warm)]/20 text-xs font-semibold text-[var(--color-accent-warm)] hover:bg-[var(--color-accent-warm)]/20 transition-all"
+          onClick={() => {
+            if (user?.isAdmin && onNavigateAdmin) {
+              onNavigateAdmin();
+            } else {
+              onOpenAuth();
+            }
+          }}
+          className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--color-accent-warm)]/10 border border-[var(--color-accent-warm)]/20 text-xs font-semibold text-[var(--color-accent-warm)] hover:bg-[var(--color-accent-warm)]/20 transition-all cursor-pointer"
+          title={user?.isAdmin ? "فتح مركز إدارة وتحكم النظام" : "إدارة الحساب"}
         >
           {user?.isAdmin ? (
             <Crown className="w-3.5 h-3.5 text-amber-500 fill-amber-500/20" />

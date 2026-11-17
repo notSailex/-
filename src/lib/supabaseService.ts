@@ -597,3 +597,129 @@ export async function fetchAdminSystemStats(): Promise<AdminSystemStats | null> 
     return null;
   }
 }
+
+// ----------------------------------------------------------------------------
+// 9. خدمات إدارة المستخدمين والإعلانات العامة للأدمن (Admin Extended Services)
+// ----------------------------------------------------------------------------
+
+export interface AdminUserRecord {
+  id: string;
+  email: string;
+  name: string;
+  role: 'user' | 'admin';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GlobalAnnouncement {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'golden' | 'alert';
+  isActive: boolean;
+  updatedAt: string;
+  authorName?: string;
+}
+
+const STORAGE_KEY_ANNOUNCEMENT = 'trmez_global_announcement_v1';
+const STORAGE_KEY_FEATURED_BOOKS = 'trmez_featured_books_v1';
+
+export async function fetchAllUsers(): Promise<AdminUserRecord[]> {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, email, name, role, created_at, updated_at')
+      .order('created_at', { ascending: false });
+
+    if (error || !data) return [];
+
+    return data.map((row: any) => ({
+      id: row.id,
+      email: row.email || '',
+      name: row.name || 'مستخدم',
+      role: row.role || 'user',
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }));
+  } catch (err) {
+    console.error('Error fetching all users:', err);
+    return [];
+  }
+}
+
+export async function updateUserRole(userId: string, newRole: 'admin' | 'user'): Promise<boolean> {
+  const supabase = getSupabase();
+  if (!supabase) return false;
+
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ role: newRole, updated_at: new Date().toISOString() })
+      .eq('id', userId);
+
+    return !error;
+  } catch (err) {
+    console.error('Error updating user role:', err);
+    return false;
+  }
+}
+
+export async function checkDatabasePing(): Promise<{ latencyMs: number; isConnected: boolean }> {
+  const supabase = getSupabase();
+  if (!supabase) return { latencyMs: 0, isConnected: false };
+
+  const start = performance.now();
+  try {
+    const { error } = await supabase.from('profiles').select('id').limit(1);
+    const end = performance.now();
+    return {
+      latencyMs: Math.round(end - start),
+      isConnected: !error,
+    };
+  } catch {
+    return { latencyMs: 0, isConnected: false };
+  }
+}
+
+export function loadStoredAnnouncement(): GlobalAnnouncement | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_ANNOUNCEMENT);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+export function saveStoredAnnouncement(announcement: GlobalAnnouncement | null): void {
+  try {
+    if (!announcement) {
+      localStorage.removeItem(STORAGE_KEY_ANNOUNCEMENT);
+    } else {
+      localStorage.setItem(STORAGE_KEY_ANNOUNCEMENT, JSON.stringify(announcement));
+    }
+  } catch (err) {
+    console.error('Error saving announcement:', err);
+  }
+}
+
+export function loadStoredFeaturedBooks(): BookItem[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_FEATURED_BOOKS);
+    if (!raw) return [];
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+export function saveStoredFeaturedBooks(books: BookItem[]): void {
+  try {
+    localStorage.setItem(STORAGE_KEY_FEATURED_BOOKS, JSON.stringify(books));
+  } catch (err) {
+    console.error('Error saving featured books:', err);
+  }
+}

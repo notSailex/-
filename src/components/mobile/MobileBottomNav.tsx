@@ -2,7 +2,7 @@ import React from 'react';
 import { Home, StickyNote, BarChart2, Timer } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
-export type ActiveTab = 'home' | 'notes' | 'journal' | 'focus' | 'stats' | 'profile' | 'library';
+export type ActiveTab = 'home' | 'notes' | 'journal' | 'focus' | 'stats' | 'profile' | 'library' | 'admin';
 
 interface MobileBottomNavProps {
   activeTab: ActiveTab;

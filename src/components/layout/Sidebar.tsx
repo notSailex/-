@@ -98,6 +98,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </button>
             );
           })}
+
+          {/* Admin Dedicated Navigation Item */}
+          {user?.isAdmin && (
+            <button
+              type="button"
+              onClick={() => onChangeTab('admin')}
+              className={cn(
+                "w-full mt-2 flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all duration-200 group border",
+                activeTab === 'admin'
+                  ? "bg-gradient-to-r from-amber-500/25 to-amber-600/15 text-amber-500 border-amber-500/40 shadow-[0_0_12px_rgba(245,158,11,0.2)]"
+                  : "text-amber-500/90 border-amber-500/20 bg-amber-500/[0.05] hover:bg-amber-500/15 hover:border-amber-500/35"
+              )}
+            >
+              <div className="flex items-center gap-3">
+                <Crown className="w-4 h-4 fill-current text-amber-500 transition-transform group-hover:scale-110" />
+                <span>مركز إدارة النظام</span>
+              </div>
+              <span className="px-1.5 py-0.5 rounded text-[9px] bg-amber-500/20 text-amber-400 font-bold border border-amber-400/30">
+                VIP
+              </span>
+            </button>
+          )}
         </nav>
       </div>
 
