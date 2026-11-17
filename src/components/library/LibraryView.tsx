@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookItem, ReadingStatus, UserProfile } from '../../types/journal';
-import { loadStoredBooks, saveStoredBooks } from '../../lib/storage';
+import { loadStoredBooks, saveStoredBooks, purgeLegacyMockBooks, MOCK_BOOK_TITLES } from '../../lib/storage';
 import { compressImage, toArabicNumerals } from '../../lib/utils';
 import {
   fetchUserBooks,
@@ -107,15 +107,23 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ user, onRequireAuth })
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Sync books from Supabase when user logs in
+  // Sync books from Supabase when user logs in - Supabase is single source of truth!
   useEffect(() => {
     if (!user?.id) return;
     let isMounted = true;
     fetchUserBooks(user.id).then((remoteBooks) => {
       if (!isMounted) return;
-      if (remoteBooks && remoteBooks.length > 0) {
-        setBooks(remoteBooks);
-        saveStoredBooks(remoteBooks);
+      const rawList = remoteBooks || [];
+      const cleanBooks = purgeLegacyMockBooks(rawList);
+      setBooks(cleanBooks);
+      saveStoredBooks(cleanBooks);
+
+      // Clean from remote Supabase if legacy mock books were previously saved
+      const mockIdsInRemote = rawList
+        .filter(b => b.id === 'book-1' || b.id === 'book-2' || b.id === 'book-3' || MOCK_BOOK_TITLES.includes(b.title))
+        .map(b => b.id);
+      for (const mockId of mockIdsInRemote) {
+        deleteUserBook(user.id, mockId);
       }
     });
     return () => {

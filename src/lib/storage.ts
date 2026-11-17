@@ -54,6 +54,23 @@ export function purgeLegacyMockEntries(entries: Record<string, JournalEntry>): R
   return clean;
 }
 
+export const MOCK_BOOK_TITLES = [
+  'في مديح الظل',
+  'طوق الحمامة في الألفة والأُلاّف',
+  'طوق الحمامة في الألفة والألاف',
+  'التفكير فريضة إسلامية',
+];
+
+export function purgeLegacyMockBooks(books: BookItem[]): BookItem[] {
+  return books.filter(b =>
+    b.id !== 'book-1' &&
+    b.id !== 'book-2' &&
+    b.id !== 'book-3' &&
+    !MOCK_BOOK_TITLES.includes(b.title) &&
+    !(b.author && (b.author.includes('تانيزاكي') || b.author.includes('ابن حزم') || b.author.includes('العقاد')))
+  );
+}
+
 export function purgeLegacyMockData(): void {
   try {
     // 1. Clean entries
@@ -91,6 +108,14 @@ export function purgeLegacyMockData(): void {
         !['focus-1', 'focus-2', 'focus-3', 'focus-4'].includes(s.id)
       );
       localStorage.setItem(STORAGE_KEY_FOCUS_SESSIONS, JSON.stringify(cleaned));
+    }
+
+    // 4. Clean library books
+    const rawBooks = localStorage.getItem(STORAGE_KEY_BOOKS);
+    if (rawBooks) {
+      const parsed: BookItem[] = JSON.parse(rawBooks);
+      const cleaned = purgeLegacyMockBooks(parsed);
+      localStorage.setItem(STORAGE_KEY_BOOKS, JSON.stringify(cleaned));
     }
   } catch (err) {
     console.error('Error in purgeLegacyMockData:', err);
@@ -251,7 +276,12 @@ export function loadStoredBooks(): BookItem[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_BOOKS);
     if (!raw) return [];
-    return JSON.parse(raw);
+    const parsed: BookItem[] = JSON.parse(raw);
+    const cleaned = purgeLegacyMockBooks(parsed);
+    if (cleaned.length !== parsed.length) {
+      localStorage.setItem(STORAGE_KEY_BOOKS, JSON.stringify(cleaned));
+    }
+    return cleaned;
   } catch {
     return [];
   }
@@ -259,7 +289,8 @@ export function loadStoredBooks(): BookItem[] {
 
 export function saveStoredBooks(books: BookItem[]) {
   try {
-    localStorage.setItem(STORAGE_KEY_BOOKS, JSON.stringify(books));
+    const cleaned = purgeLegacyMockBooks(books);
+    localStorage.setItem(STORAGE_KEY_BOOKS, JSON.stringify(cleaned));
   } catch (e) {
     console.error('Error saving library books', e);
   }
