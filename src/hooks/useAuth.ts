@@ -1,29 +1,60 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { UserProfile } from '../types/journal';
 import { getSupabase, isSupabaseReady } from '../lib/supabaseClient';
+import { fetchUserProfile } from '../lib/supabaseService';
 
-const LOCAL_USER_KEY = 'trmez_auth_user_v1';
+const LOCAL_USER_KEY = 'trmez_auth_user_v2';
 
 export function useAuth() {
   const [user, setUser] = useState<UserProfile | null>(() => {
     try {
       const raw = localStorage.getItem(LOCAL_USER_KEY);
-      if (raw) return JSON.parse(raw);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.id && !parsed.isGuest) {
+          return parsed;
+        }
+      }
     } catch {
       // ignore
     }
-    // Default guest profile
-    return {
-      id: 'guest-local-user',
-      email: 'guest@trmez.local',
-      name: 'كاتب هادئ (زائر)',
-      isGuest: true,
-      joinedDate: new Date().toISOString(),
-    };
+    return null;
   });
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [authError, setAuthError] = useState<string | null>(null);
+
+  const syncUserFromSession = useCallback(async (sessionUser: any) => {
+    try {
+      const profile = await fetchUserProfile(sessionUser.id);
+      const u: UserProfile = {
+        id: sessionUser.id,
+        email: sessionUser.email || '',
+        name: profile?.name || sessionUser.user_metadata?.full_name || sessionUser.email?.split('@')[0] || 'مستخدم',
+        isGuest: false,
+        role: profile?.role || 'user',
+        isAdmin: profile?.role === 'admin' || profile?.isAdmin === true,
+        joinedDate: sessionUser.created_at,
+      };
+      setUser(u);
+      localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(u));
+      return u;
+    } catch (e) {
+      console.warn('Error loading user profile:', e);
+      const fallbackUser: UserProfile = {
+        id: sessionUser.id,
+        email: sessionUser.email || '',
+        name: sessionUser.user_metadata?.full_name || sessionUser.email?.split('@')[0] || 'مستخدم',
+        isGuest: false,
+        role: 'user',
+        isAdmin: false,
+        joinedDate: sessionUser.created_at,
+      };
+      setUser(fallbackUser);
+      localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(fallbackUser));
+      return fallbackUser;
+    }
+  }, []);
 
   useEffect(() => {
     const supabase = getSupabase();
@@ -32,47 +63,27 @@ export function useAuth() {
     // Check remote session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        const remoteUser: UserProfile = {
-          id: session.user.id,
-          email: session.user.email || '',
-          name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'مستخدم',
-          isGuest: false,
-          joinedDate: session.user.created_at,
-        };
-        setUser(remoteUser);
-        localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(remoteUser));
+        syncUserFromSession(session.user);
+      } else {
+        // No active session
+        setUser(null);
+        localStorage.removeItem(LOCAL_USER_KEY);
       }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        const remoteUser: UserProfile = {
-          id: session.user.id,
-          email: session.user.email || '',
-          name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'مستخدم',
-          isGuest: false,
-          joinedDate: session.user.created_at,
-        };
-        setUser(remoteUser);
-        localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(remoteUser));
+        syncUserFromSession(session.user);
       } else {
-        // Fall back to guest if signed out from remote
-        const guest: UserProfile = {
-          id: 'guest-local-user',
-          email: 'guest@trmez.local',
-          name: 'كاتب هادئ (زائر)',
-          isGuest: true,
-          joinedDate: new Date().toISOString(),
-        };
-        setUser(guest);
-        localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(guest));
+        setUser(null);
+        localStorage.removeItem(LOCAL_USER_KEY);
       }
     });
 
     return () => {
       subscription?.unsubscribe();
     };
-  }, []);
+  }, [syncUserFromSession]);
 
   const loginWithEmail = async (email: string, password: string) => {
     setIsLoading(true);
@@ -80,19 +91,19 @@ export function useAuth() {
     const supabase = getSupabase();
 
     if (!supabase) {
-      // Simulate local login
-      setTimeout(() => {
-        const localUser: UserProfile = {
-          id: `local-${Date.now()}`,
-          email,
-          name: email.split('@')[0] || 'كاتب',
-          isGuest: false,
-          joinedDate: new Date().toISOString(),
-        };
-        setUser(localUser);
-        localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(localUser));
-        setIsLoading(false);
-      }, 500);
+      // Offline fallback login
+      const localUser: UserProfile = {
+        id: `local-${Date.now()}`,
+        email,
+        name: email.split('@')[0] || 'كاتب',
+        isGuest: false,
+        role: 'user',
+        isAdmin: false,
+        joinedDate: new Date().toISOString(),
+      };
+      setUser(localUser);
+      localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(localUser));
+      setIsLoading(false);
       return { success: true };
     }
 
@@ -104,15 +115,7 @@ export function useAuth() {
         return { success: false, error: error.message };
       }
       if (data.user) {
-        const u: UserProfile = {
-          id: data.user.id,
-          email: data.user.email || '',
-          name: data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'مستخدم',
-          isGuest: false,
-          joinedDate: data.user.created_at,
-        };
-        setUser(u);
-        localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(u));
+        await syncUserFromSession(data.user);
       }
       setIsLoading(false);
       return { success: true };
@@ -130,18 +133,18 @@ export function useAuth() {
     const supabase = getSupabase();
 
     if (!supabase) {
-      setTimeout(() => {
-        const localUser: UserProfile = {
-          id: `local-${Date.now()}`,
-          email,
-          name: name || email.split('@')[0] || 'كاتب',
-          isGuest: false,
-          joinedDate: new Date().toISOString(),
-        };
-        setUser(localUser);
-        localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(localUser));
-        setIsLoading(false);
-      }, 500);
+      const localUser: UserProfile = {
+        id: `local-${Date.now()}`,
+        email,
+        name: name || email.split('@')[0] || 'كاتب',
+        isGuest: false,
+        role: 'user',
+        isAdmin: false,
+        joinedDate: new Date().toISOString(),
+      };
+      setUser(localUser);
+      localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(localUser));
+      setIsLoading(false);
       return { success: true };
     }
 
@@ -159,15 +162,7 @@ export function useAuth() {
         return { success: false, error: error.message };
       }
       if (data.user) {
-        const u: UserProfile = {
-          id: data.user.id,
-          email: data.user.email || '',
-          name: name || data.user.email?.split('@')[0] || 'مستخدم',
-          isGuest: false,
-          joinedDate: data.user.created_at,
-        };
-        setUser(u);
-        localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(u));
+        await syncUserFromSession(data.user);
       }
       setIsLoading(false);
       return { success: true };
@@ -182,29 +177,35 @@ export function useAuth() {
   const logout = async () => {
     const supabase = getSupabase();
     if (supabase) {
-      await supabase.auth.signOut();
+      try {
+        await supabase.auth.signOut();
+      } catch (e) {
+        console.warn('SignOut error:', e);
+      }
     }
-    const guest: UserProfile = {
-      id: 'guest-local-user',
-      email: 'guest@trmez.local',
-      name: 'كاتب هادئ (زائر)',
-      isGuest: true,
-      joinedDate: new Date().toISOString(),
-    };
-    setUser(guest);
-    localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(guest));
+    setUser(null);
+    localStorage.removeItem(LOCAL_USER_KEY);
+  };
+
+  const refreshProfile = async () => {
+    if (user?.id) {
+      const profile = await fetchUserProfile(user.id);
+      if (profile) {
+        const updated: UserProfile = {
+          ...user,
+          role: profile.role || user.role,
+          isAdmin: profile.role === 'admin' || profile.isAdmin === true,
+        };
+        setUser(updated);
+        localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(updated));
+      }
+    }
   };
 
   const setGuestMode = () => {
-    const guest: UserProfile = {
-      id: 'guest-local-user',
-      email: 'guest@trmez.local',
-      name: 'كاتب هادئ (خزينة محلية)',
-      isGuest: true,
-      joinedDate: new Date().toISOString(),
-    };
-    setUser(guest);
-    localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(guest));
+    // Mode for exploring without logging in (read-only preview)
+    setUser(null);
+    localStorage.removeItem(LOCAL_USER_KEY);
   };
 
   return {
@@ -214,6 +215,7 @@ export function useAuth() {
     loginWithEmail,
     registerWithEmail,
     logout,
+    refreshProfile,
     setGuestMode,
     isSupabaseConnected: isSupabaseReady(),
   };

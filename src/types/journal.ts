@@ -61,6 +61,8 @@ export interface UserProfile {
   name: string;
   avatarUrl?: string;
   isGuest: boolean;
+  isAdmin?: boolean;
+  role?: 'admin' | 'user';
   joinedDate: string;
 }
 

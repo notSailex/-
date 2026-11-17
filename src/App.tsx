@@ -45,7 +45,7 @@ export const App: React.FC = () => {
     pageTurnDirection,
     saveStatus,
     stats,
-  } = useJournal();
+  } = useJournal(user?.id);
 
   // Navigation handlers
   const handleSelectDateFromCalendar = (date: string) => {
@@ -110,19 +110,30 @@ export const App: React.FC = () => {
               saveStatus={saveStatus}
               direction={pageTurnDirection}
               settings={settings}
+              user={user}
+              onRequireAuth={() => setIsAuthOpen(true)}
             />
           )}
 
           {activeTab === 'notes' && (
-            <QuickNotesView />
+            <QuickNotesView
+              user={user}
+              onRequireAuth={() => setIsAuthOpen(true)}
+            />
           )}
 
           {activeTab === 'library' && (
-            <LibraryView />
+            <LibraryView
+              user={user}
+              onRequireAuth={() => setIsAuthOpen(true)}
+            />
           )}
 
           {activeTab === 'focus' && (
-            <FocusTimerView />
+            <FocusTimerView
+              user={user}
+              onRequireAuth={() => setIsAuthOpen(true)}
+            />
           )}
 
           {activeTab === 'stats' && (

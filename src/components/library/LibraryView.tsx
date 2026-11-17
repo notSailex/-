@@ -1,8 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookItem, ReadingStatus } from '../../types/journal';
+import { BookItem, ReadingStatus, UserProfile } from '../../types/journal';
 import { loadStoredBooks, saveStoredBooks } from '../../lib/storage';
 import { compressImage, toArabicNumerals } from '../../lib/utils';
+import { fetchUserBooks, saveUserBook, deleteUserBook, uploadMediaToStorage } from '../../lib/supabaseService';
 import {
   Library,
   Plus,
@@ -18,7 +19,8 @@ import {
   Calendar,
   Sparkles,
   ChevronLeft,
-  Filter
+  Filter,
+  Lock
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -52,7 +54,12 @@ const STATUS_CONFIG: Record<ReadingStatus, { label: string; color: string; bg: s
   },
 };
 
-export const LibraryView: React.FC = () => {
+interface LibraryViewProps {
+  user?: UserProfile | null;
+  onRequireAuth?: () => void;
+}
+
+export const LibraryView: React.FC<LibraryViewProps> = ({ user, onRequireAuth }) => {
   const [books, setBooks] = useState<BookItem[]>(() => loadStoredBooks());
   const [activeFilter, setActiveFilter] = useState<FilterStatus>('all');
 
@@ -70,8 +77,25 @@ export const LibraryView: React.FC = () => {
   const [formFinishedDate, setFormFinishedDate] = useState('');
   const [formSummary, setFormSummary] = useState('');
   const [formError, setFormError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync books from Supabase when user logs in
+  useEffect(() => {
+    if (!user?.id) return;
+    let isMounted = true;
+    fetchUserBooks(user.id).then((remoteBooks) => {
+      if (!isMounted) return;
+      if (remoteBooks && remoteBooks.length > 0) {
+        setBooks(remoteBooks);
+        saveStoredBooks(remoteBooks);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id]);
 
   // Sync to localStorage
   const updateBooksList = (updated: BookItem[]) => {
@@ -110,6 +134,11 @@ export const LibraryView: React.FC = () => {
 
   // Open Add Book Modal
   const handleOpenAddModal = () => {
+    if (!user) {
+      onRequireAuth?.();
+      return;
+    }
+
     setEditingBookId(null);
     setFormTitle('');
     setFormAuthor('');
@@ -124,6 +153,11 @@ export const LibraryView: React.FC = () => {
 
   // Open Edit Book Modal
   const handleOpenEditModal = (book: BookItem) => {
+    if (!user) {
+      onRequireAuth?.();
+      return;
+    }
+
     setEditingBookId(book.id);
     setFormTitle(book.title);
     setFormAuthor(book.author || '');
@@ -138,8 +172,13 @@ export const LibraryView: React.FC = () => {
   };
 
   // Save Book (Add or Edit)
-  const handleSaveBook = (e: React.FormEvent) => {
+  const handleSaveBook = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      onRequireAuth?.();
+      return;
+    }
+
     if (!formTitle.trim()) {
       setFormError('يرجى كتابة اسم الكتاب.');
       return;
@@ -149,32 +188,51 @@ export const LibraryView: React.FC = () => {
       return;
     }
 
+    setIsSubmitting(true);
+    let finalCoverUrl = formCoverImage;
+
+    // If base64 uploaded image, upload to Supabase storage if user is logged in
+    if (user?.id && formCoverImage.startsWith('data:image')) {
+      try {
+        finalCoverUrl = await uploadMediaToStorage(user.id, formCoverImage, 'covers');
+      } catch (e) {
+        console.warn('Cover upload failed, using local format:', e);
+      }
+    }
+
     if (editingBookId) {
       // Edit existing
+      let savedBookRef: BookItem | null = null;
       const updated = books.map(b => {
         if (b.id === editingBookId) {
-          return {
+          const item: BookItem = {
             ...b,
             title: formTitle.trim(),
             author: formAuthor.trim() || undefined,
-            coverImage: formCoverImage,
+            coverImage: finalCoverUrl,
             status: formStatus,
             rating: formRating,
             finishedDate: formFinishedDate || undefined,
             summary: formSummary.trim() || undefined,
             updatedAt: new Date().toISOString(),
           };
+          savedBookRef = item;
+          return item;
         }
         return b;
       });
       updateBooksList(updated);
+
+      if (user?.id && savedBookRef) {
+        await saveUserBook(user.id, savedBookRef);
+      }
     } else {
       // Create new
       const newBook: BookItem = {
         id: `book-${Date.now()}`,
         title: formTitle.trim(),
         author: formAuthor.trim() || undefined,
-        coverImage: formCoverImage,
+        coverImage: finalCoverUrl,
         status: formStatus,
         rating: formRating,
         finishedDate: formFinishedDate || undefined,
@@ -183,17 +241,30 @@ export const LibraryView: React.FC = () => {
         updatedAt: new Date().toISOString(),
       };
       updateBooksList([newBook, ...books]);
+
+      if (user?.id) {
+        await saveUserBook(user.id, newBook);
+      }
     }
 
+    setIsSubmitting(false);
     setIsAddModalOpen(false);
   };
 
   // Delete Book
-  const handleDeleteBook = (id: string) => {
+  const handleDeleteBook = async (id: string) => {
+    if (!user) {
+      onRequireAuth?.();
+      return;
+    }
+
     if (confirm('هل أنت متأكد من حذف هذا الكتاب من رفوف مكتبتك؟')) {
       const updated = books.filter(b => b.id !== id);
       updateBooksList(updated);
       setSelectedBookForDetails(null);
+      if (user?.id) {
+        await deleteUserBook(user.id, id);
+      }
     }
   };
 

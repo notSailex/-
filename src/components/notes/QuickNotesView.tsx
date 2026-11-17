@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { QuickNote } from '../../types/journal';
+import { QuickNote, UserProfile } from '../../types/journal';
 import { loadStoredNotes, saveStoredNotes } from '../../lib/storage';
+import { fetchUserNotes, saveUserNote, deleteUserNote } from '../../lib/supabaseService';
 import {
   StickyNote,
   Plus,
@@ -15,14 +16,20 @@ import {
   Tag,
   ArrowRight,
   FileText,
-  PenTool
+  PenTool,
+  Lock
 } from 'lucide-react';
 import { cn, toArabicNumerals, formatWordsCount } from '../../lib/utils';
 import { StylusCanvas } from '../common/StylusCanvas';
 
 const CATEGORIES = ['all', 'أفكار', 'إلهام', 'قراءة', 'مهام'] as const;
 
-export const QuickNotesView: React.FC = () => {
+interface QuickNotesViewProps {
+  user?: UserProfile | null;
+  onRequireAuth?: () => void;
+}
+
+export const QuickNotesView: React.FC<QuickNotesViewProps> = ({ user, onRequireAuth }) => {
   const [notes, setNotes] = useState<QuickNote[]>(() => loadStoredNotes());
   const [viewMode, setViewMode] = useState<'list' | 'editor'>('list');
   const [editorMode, setEditorMode] = useState<'text' | 'drawing'>('text');
@@ -32,6 +39,22 @@ export const QuickNotesView: React.FC = () => {
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving'>('saved');
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Sync notes from Supabase when user logs in
+  useEffect(() => {
+    if (!user?.id) return;
+    let isMounted = true;
+    fetchUserNotes(user.id).then((remoteNotes) => {
+      if (!isMounted) return;
+      if (remoteNotes && remoteNotes.length > 0) {
+        setNotes(remoteNotes);
+        saveStoredNotes(remoteNotes);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id]);
+
   // Sync notes to localStorage
   const updateNotesList = (updated: QuickNote[]) => {
     setNotes(updated);
@@ -40,6 +63,11 @@ export const QuickNotesView: React.FC = () => {
 
   // Create a brand new note and immediately open it in the full editor
   const handleCreateNote = () => {
+    if (!user) {
+      onRequireAuth?.();
+      return;
+    }
+
     const newNote: QuickNote = {
       id: `note-${Date.now()}`,
       title: '',
@@ -52,6 +80,10 @@ export const QuickNotesView: React.FC = () => {
     updateNotesList(updated);
     setActiveNoteId(newNote.id);
     setViewMode('editor');
+
+    if (user?.id) {
+      saveUserNote(user.id, newNote);
+    }
   };
 
   // Open existing note in full editor
@@ -67,34 +99,66 @@ export const QuickNotesView: React.FC = () => {
   };
 
   // Delete note
-  const handleDeleteNote = (id: string, e?: React.MouseEvent) => {
+  const handleDeleteNote = async (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    if (!user) {
+      onRequireAuth?.();
+      return;
+    }
     const updated = notes.filter(n => n.id !== id);
     updateNotesList(updated);
     if (activeNoteId === id) {
       handleBackToList();
+    }
+    if (user?.id) {
+      await deleteUserNote(user.id, id);
     }
   };
 
   // Toggle pin
   const handleTogglePin = (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    if (!user) {
+      onRequireAuth?.();
+      return;
+    }
     const updated = notes.map(n => n.id === id ? { ...n, pinned: !n.pinned } : n);
     updateNotesList(updated);
+    const target = updated.find(n => n.id === id);
+    if (user?.id && target) {
+      saveUserNote(user.id, target);
+    }
   };
 
   // Update note content (auto-save)
   const handleUpdateActive = (partial: Partial<QuickNote>) => {
     if (!activeNoteId) return;
+    if (!user) {
+      onRequireAuth?.();
+      return;
+    }
 
     setSaveStatus('saving');
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
 
     const nowIso = new Date().toISOString();
-    const updated = notes.map(n => n.id === activeNoteId ? { ...n, ...partial, updatedAt: nowIso } : n);
+    let updatedNoteRef: QuickNote | null = null;
+
+    const updated = notes.map(n => {
+      if (n.id === activeNoteId) {
+        const item = { ...n, ...partial, updatedAt: nowIso };
+        updatedNoteRef = item;
+        return item;
+      }
+      return n;
+    });
+
     updateNotesList(updated);
 
-    saveTimeoutRef.current = setTimeout(() => {
+    saveTimeoutRef.current = setTimeout(async () => {
+      if (user?.id && updatedNoteRef) {
+        await saveUserNote(user.id, updatedNoteRef);
+      }
       setSaveStatus('saved');
     }, 450);
   };

@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { JournalEntry, AppSettings } from '../../types/journal';
+import { JournalEntry, AppSettings, UserProfile } from '../../types/journal';
 import { BookPageLeft } from './BookPageLeft';
 import { BookPageRight } from './BookPageRight';
 import { AmbientAudioBar } from './AmbientAudioBar';
 import { getTodayISODate, cn } from '../../lib/utils';
-import { ChevronRight, ChevronLeft, Calendar as CalendarIcon, Bookmark } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Calendar as CalendarIcon, Bookmark, Lock } from 'lucide-react';
 
 interface BookViewProps {
   entry: JournalEntry;
@@ -16,6 +16,8 @@ interface BookViewProps {
   saveStatus: 'saved' | 'saving' | 'unsaved';
   direction: 'left' | 'right' | null;
   settings: AppSettings;
+  user?: UserProfile | null;
+  onRequireAuth?: () => void;
 }
 
 export const BookView: React.FC<BookViewProps> = ({
@@ -27,10 +29,20 @@ export const BookView: React.FC<BookViewProps> = ({
   saveStatus,
   direction,
   settings,
+  user,
+  onRequireAuth,
 }) => {
   const [mobileTab, setMobileTab] = useState<'write' | 'details'>('write');
   const today = getTodayISODate();
   const isToday = entry.date === today;
+
+  const handleUpdate = (updates: Partial<JournalEntry>) => {
+    if (!user) {
+      onRequireAuth?.();
+      return;
+    }
+    onUpdate(updates);
+  };
 
   // Realistic Physical Paper Slide & Elevation Transition
   // Eliminates 3D rotation in favor of a soft, tactile, high-end paper slide
@@ -65,6 +77,23 @@ export const BookView: React.FC<BookViewProps> = ({
 
   return (
     <div className="w-full max-w-6xl mx-auto flex flex-col items-center">
+      {/* Unauthenticated User Warning */}
+      {!user && (
+        <div className="w-full mb-3 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-medium">
+            <Lock className="w-4 h-4 shrink-0 text-amber-500" />
+            <span>أنت في نمط المعاينة كزائر — سجّل دخولك لحفظ وتشفير يومياتك على السحابة</span>
+          </div>
+          <button
+            type="button"
+            onClick={onRequireAuth}
+            className="px-3.5 py-1.5 rounded-xl font-bold bg-[var(--color-accent-warm)] text-white hover:opacity-90 shrink-0 shadow-xs"
+          >
+            تسجيل الدخول / إنشاء حساب
+          </button>
+        </div>
+      )}
+
       {/* Top Bar above notebook: Ambient sound player, quick date shortcuts */}
       <div className="w-full flex items-center justify-between mb-4 px-2 sm:px-4">
         <div className="flex items-center gap-2">
@@ -161,7 +190,7 @@ export const BookView: React.FC<BookViewProps> = ({
                   <div className="h-full relative overflow-y-auto">
                     <BookPageLeft
                       entry={entry}
-                      onUpdate={onUpdate}
+                      onUpdate={handleUpdate}
                       onPrevDay={onPrevDay}
                       onNextDay={onNextDay}
                       isToday={isToday}
@@ -173,7 +202,7 @@ export const BookView: React.FC<BookViewProps> = ({
                   <div className="h-full relative overflow-hidden flex flex-col">
                     <BookPageRight
                       entry={entry}
-                      onUpdate={onUpdate}
+                      onUpdate={handleUpdate}
                       saveStatus={saveStatus}
                       settings={settings}
                     />
@@ -185,7 +214,7 @@ export const BookView: React.FC<BookViewProps> = ({
                   {mobileTab === 'write' ? (
                     <BookPageRight
                       entry={entry}
-                      onUpdate={onUpdate}
+                      onUpdate={handleUpdate}
                       saveStatus={saveStatus}
                       settings={settings}
                     />
@@ -193,7 +222,7 @@ export const BookView: React.FC<BookViewProps> = ({
                     <div className="h-full overflow-y-auto">
                       <BookPageLeft
                         entry={entry}
-                        onUpdate={onUpdate}
+                        onUpdate={handleUpdate}
                         onPrevDay={onPrevDay}
                         onNextDay={onNextDay}
                         isToday={isToday}

@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FocusSession, FocusSessionType } from '../../types/journal';
+import { FocusSession, FocusSessionType, UserProfile } from '../../types/journal';
 import {
   loadStoredFocusSessions,
   saveStoredFocusSessions,
   loadStoredFocusSubjects,
   saveStoredFocusSubjects
 } from '../../lib/storage';
+import { fetchUserFocusSessions, saveUserFocusSession, deleteUserFocusSession } from '../../lib/supabaseService';
 import { getTodayISODate, toArabicNumerals } from '../../lib/utils';
 import confetti from 'canvas-confetti';
 import {
@@ -26,7 +27,8 @@ import {
   Coffee,
   Flame,
   Clock,
-  Layers
+  Layers,
+  Lock
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -37,7 +39,12 @@ const SESSION_TYPES: { id: FocusSessionType; label: string; icon: React.ElementT
   { id: 'meditation', label: 'تأمل', icon: Heart },
 ];
 
-export const FocusTimerView: React.FC = () => {
+interface FocusTimerViewProps {
+  user?: UserProfile | null;
+  onRequireAuth?: () => void;
+}
+
+export const FocusTimerView: React.FC<FocusTimerViewProps> = ({ user, onRequireAuth }) => {
   // Modes: work (focus) vs break (rest)
   const [timerMode, setTimerMode] = useState<'work' | 'break'>('work');
   const [workMinutes, setWorkMinutes] = useState<number>(25);
@@ -62,6 +69,23 @@ export const FocusTimerView: React.FC = () => {
   });
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Load user sessions from Supabase on mount / login
+  useEffect(() => {
+    if (!user?.id) return;
+    let isMounted = true;
+    fetchUserFocusSessions(user.id).then((remoteSessions) => {
+      if (!isMounted) return;
+      if (remoteSessions && remoteSessions.length > 0) {
+        saveStoredFocusSessions(remoteSessions);
+        const today = getTodayISODate();
+        setTodaySessions(remoteSessions.filter(s => s.date === today));
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id]);
 
   // Total seconds for current mode
   const currentTotalSeconds = (timerMode === 'work' ? workMinutes : breakMinutes) * 60;
@@ -135,6 +159,10 @@ export const FocusTimerView: React.FC = () => {
       saveStoredFocusSessions(updated);
       setTodaySessions(prev => [newSession, ...prev]);
 
+      if (user?.id) {
+        saveUserFocusSession(user.id, newSession);
+      }
+
       // Switch to break mode automatically
       setTimerMode('break');
       setTimeLeftSeconds(breakMinutes * 60);
@@ -189,6 +217,10 @@ export const FocusTimerView: React.FC = () => {
   };
 
   const handleToggleTimer = () => {
+    if (!isRunning && !user) {
+      onRequireAuth?.();
+      return;
+    }
     setIsRunning(prev => !prev);
   };
 

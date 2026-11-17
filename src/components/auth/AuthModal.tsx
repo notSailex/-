@@ -219,7 +219,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                 }}
                 className="text-xs text-[#7E786E] dark:text-[#9E9689] hover:text-[#E09F3E] transition-colors"
               >
-                المتابعة كزائر بدون حساب (تخزين محلي فقط) →
+                المتابعة كزائر (وضع المعاينة للقراءة فقط) →
               </button>
             </div>
           </>

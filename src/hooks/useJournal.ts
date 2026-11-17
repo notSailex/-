@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { JournalEntry, MoodType, UserStats } from '../types/journal';
 import { loadStoredEntries, saveStoredEntries } from '../lib/storage';
+import { fetchUserJournals, saveUserJournal, deleteUserJournal } from '../lib/supabaseService';
 import {
   getTodayISODate,
   getConsecutiveDate,
@@ -9,12 +10,33 @@ import {
   ARABIC_DAYS,
 } from '../lib/utils';
 
-export function useJournal() {
+export function useJournal(userId?: string) {
   const [entries, setEntries] = useState<Record<string, JournalEntry>>(() => loadStoredEntries());
   const [selectedDate, setSelectedDate] = useState<string>(getTodayISODate());
   const [pageTurnDirection, setPageTurnDirection] = useState<'left' | 'right' | null>(null);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Load from Supabase when user logs in
+  useEffect(() => {
+    if (!userId) return;
+
+    let isMounted = true;
+    fetchUserJournals(userId).then((remoteMap) => {
+      if (!isMounted) return;
+      if (remoteMap && Object.keys(remoteMap).length > 0) {
+        setEntries((prev) => {
+          const merged = { ...prev, ...remoteMap };
+          saveStoredEntries(merged);
+          return merged;
+        });
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [userId]);
 
   // Sync to local storage whenever entries change
   useEffect(() => {
@@ -45,6 +67,8 @@ export function useJournal() {
   const updateCurrentEntry = useCallback((updates: Partial<JournalEntry>) => {
     setSaveStatus('saving');
 
+    let updatedEntryRef: JournalEntry | null = null;
+
     setEntries((prev) => {
       const existing = prev[selectedDate] || {
         id: `entry-${selectedDate}`,
@@ -72,6 +96,8 @@ export function useJournal() {
         updatedAt: new Date().toISOString(),
       };
 
+      updatedEntryRef = updated;
+
       return {
         ...prev,
         [selectedDate]: updated,
@@ -81,10 +107,13 @@ export function useJournal() {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
-    debounceTimerRef.current = setTimeout(() => {
+    debounceTimerRef.current = setTimeout(async () => {
+      if (userId && updatedEntryRef) {
+        await saveUserJournal(userId, updatedEntryRef);
+      }
       setSaveStatus('saved');
     }, 600);
-  }, [selectedDate]);
+  }, [selectedDate, userId]);
 
   // Navigate to specific date
   const goToDate = useCallback((targetDate: string, direction?: 'left' | 'right') => {
@@ -116,13 +145,16 @@ export function useJournal() {
   }, [selectedDate, goToDate]);
 
   // Delete an entry
-  const deleteEntry = useCallback((dateToDelete: string) => {
+  const deleteEntry = useCallback(async (dateToDelete: string) => {
     setEntries((prev) => {
       const copy = { ...prev };
       delete copy[dateToDelete];
       return copy;
     });
-  }, []);
+    if (userId) {
+      await deleteUserJournal(userId, dateToDelete);
+    }
+  }, [userId]);
 
   // Compute 7-day stats and overall metrics
   const stats = useMemo((): UserStats => {
@@ -147,7 +179,7 @@ export function useJournal() {
       });
     }
 
-    const allEntriesList = Object.values(entries).filter(e => e.content.trim().length > 0 || e.mood !== null);
+    const allEntriesList = Object.values(entries).filter(e => (e.content && e.content.trim().length > 0) || e.mood !== null);
     const totalWordsWritten = allEntriesList.reduce((acc, curr) => acc + (curr.wordCount || 0), 0);
     const totalEntriesCount = allEntriesList.length;
 
@@ -187,7 +219,33 @@ export function useJournal() {
       }
     }
 
-    const longestStreakDays = Math.max(currentStreakDays, 7);
+    // Calculate actual longest streak from real entry history
+    const writtenDates = Object.keys(entries)
+      .filter((d) => entries[d]?.content?.trim().length > 0)
+      .sort();
+
+    let computedLongestStreak = 0;
+    let tempStreak = 0;
+    let prevDate: string | null = null;
+
+    for (const d of writtenDates) {
+      if (!prevDate) {
+        tempStreak = 1;
+      } else {
+        const expectedNext = getConsecutiveDate(prevDate, 1);
+        if (d === expectedNext) {
+          tempStreak++;
+        } else {
+          tempStreak = 1;
+        }
+      }
+      prevDate = d;
+      if (tempStreak > computedLongestStreak) {
+        computedLongestStreak = tempStreak;
+      }
+    }
+
+    const longestStreakDays = Math.max(computedLongestStreak, currentStreakDays);
 
     return {
       totalWordsWritten,
