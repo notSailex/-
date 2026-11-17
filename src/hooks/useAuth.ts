@@ -110,9 +110,15 @@ export function useAuth() {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
-        setAuthError(error.message);
+        let msg = error.message;
+        if (msg.includes('Email not confirmed')) {
+          msg = 'يرجى تأكيد بريدك الإلكتروني، أو إيقاف خيار Confirm Email من Supabase لتسجيل الدخول الفوري الدائم.';
+        } else if (msg.includes('Invalid login credentials')) {
+          msg = 'بيانات الدخول غير صحيحة، يرجى التأكد من البريد وكلمة المرور.';
+        }
+        setAuthError(msg);
         setIsLoading(false);
-        return { success: false, error: error.message };
+        return { success: false, error: msg };
       }
       if (data.user) {
         await syncUserFromSession(data.user);
@@ -161,8 +167,25 @@ export function useAuth() {
         setIsLoading(false);
         return { success: false, error: error.message };
       }
+
+      // If session is already created (Confirm Email disabled in Supabase)
+      if (data.session && data.user) {
+        await syncUserFromSession(data.user);
+        setIsLoading(false);
+        return { success: true };
+      }
+
+      // Try immediate sign-in in case it was auto-confirmed
+      const signInRes = await supabase.auth.signInWithPassword({ email, password });
+      if (signInRes.data?.session && signInRes.data?.user) {
+        await syncUserFromSession(signInRes.data.user);
+        setIsLoading(false);
+        return { success: true };
+      }
+
       if (data.user) {
         await syncUserFromSession(data.user);
+        setAuthError('تم إنشاء الحساب! إذا طلبت Supabase تأكيد الإيميل، يرجى مراجعة بريدك أو إيقاف خيار Confirm Email من لوحة تحكم Supabase.');
       }
       setIsLoading(false);
       return { success: true };

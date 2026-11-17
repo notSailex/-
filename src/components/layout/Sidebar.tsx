@@ -10,7 +10,8 @@ import {
   Shield,
   Sparkles,
   Timer,
-  Library
+  Library,
+  Crown
 } from 'lucide-react';
 import { TrmezLogoIcon } from '../icons/TrmezLogoIcon';
 import { cn } from '../../lib/utils';
@@ -107,15 +108,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
           className="flex items-center justify-between p-3 rounded-2xl bg-black/[0.03] dark:bg-[var(--color-bg-card)] border border-black/[0.06] dark:border-white/[0.08] cursor-pointer hover:border-[var(--color-active-border)]/50 transition-all"
         >
           <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className="w-8 h-8 rounded-xl bg-[var(--color-accent-warm)]/20 text-[var(--color-accent-warm)] flex items-center justify-center shrink-0">
-              <User className="w-4 h-4" />
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+              user?.isAdmin ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30' : 'bg-[var(--color-accent-warm)]/20 text-[var(--color-accent-warm)]'
+            }`}>
+              {user?.isAdmin ? <Crown className="w-4 h-4 fill-current" /> : <User className="w-4 h-4" />}
             </div>
             <div className="truncate">
-              <div className="text-xs font-bold text-[var(--color-text-primary)] truncate">
-                {user?.name || 'زائر الخزينة'}
+              <div className="text-xs font-bold text-[var(--color-text-primary)] truncate flex items-center gap-1">
+                <span>{user?.name || 'زائر الخزينة'}</span>
+                {user?.isAdmin && <Crown className="w-3 h-3 text-amber-500 shrink-0 fill-current" />}
               </div>
               <div className="text-[10px] text-[var(--color-text-muted)] truncate">
-                {user?.isGuest ? 'تخزين محلي آمن' : 'مزامنة Supabase'}
+                {user?.isAdmin ? 'مسؤول النظام (Admin)' : user?.isGuest ? 'تخزين محلي آمن' : 'مزامنة Supabase'}
               </div>
             </div>
           </div>

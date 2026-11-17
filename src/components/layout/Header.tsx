@@ -7,7 +7,8 @@ import {
   Settings,
   User,
   Sliders,
-  Library
+  Library,
+  Crown
 } from 'lucide-react';
 import { TrmezLogoIcon } from '../icons/TrmezLogoIcon';
 import { cn } from '../../lib/utils';
@@ -125,10 +126,19 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={onOpenAuth}
           className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--color-accent-warm)]/10 border border-[var(--color-accent-warm)]/20 text-xs font-semibold text-[var(--color-accent-warm)] hover:bg-[var(--color-accent-warm)]/20 transition-all"
         >
-          <User className="w-3.5 h-3.5" />
+          {user?.isAdmin ? (
+            <Crown className="w-3.5 h-3.5 text-amber-500 fill-amber-500/20" />
+          ) : (
+            <User className="w-3.5 h-3.5" />
+          )}
           <span>
             {user?.name?.split(' ')[0] || 'الحساب'}
           </span>
+          {user?.isAdmin && (
+            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-500 dark:text-amber-400 border border-amber-500/30 flex items-center gap-0.5">
+              <span>أدمن</span>
+            </span>
+          )}
         </button>
 
         {/* Mobile Library Access Button */}

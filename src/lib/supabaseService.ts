@@ -23,7 +23,29 @@ export async function fetchUserProfile(userId: string): Promise<Partial<UserProf
       .eq('id', userId)
       .single();
 
-    if (error || !data) return null;
+    if (error || !data) {
+      const { data: authData } = await supabase.auth.getUser();
+      if (authData?.user && authData.user.id === userId) {
+        const email = authData.user.email || '';
+        const name = authData.user.user_metadata?.full_name || email.split('@')[0] || 'مستخدم';
+        const { data: inserted } = await supabase
+          .from('profiles')
+          .insert({ id: userId, email, name, role: 'user' })
+          .select()
+          .single();
+        if (inserted) {
+          return {
+            id: inserted.id,
+            email: inserted.email,
+            name: inserted.name,
+            role: inserted.role || 'user',
+            isAdmin: inserted.role === 'admin',
+            settings: inserted.settings || undefined,
+          };
+        }
+      }
+      return null;
+    }
 
     return {
       id: data.id,

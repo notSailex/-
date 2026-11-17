@@ -4,8 +4,10 @@ const LOCAL_STORAGE_KEY_URL = 'trmez_supabase_url';
 const LOCAL_STORAGE_KEY_KEY = 'trmez_supabase_anon_key';
 
 export function getStoredSupabaseConfig() {
-  const url = localStorage.getItem(LOCAL_STORAGE_KEY_URL) || import.meta.env.VITE_SUPABASE_URL || '';
-  const key = localStorage.getItem(LOCAL_STORAGE_KEY_KEY) || import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+  const envUrl = import.meta.env.VITE_SUPABASE_URL;
+  const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  const url = (envUrl && envUrl.trim()) || localStorage.getItem(LOCAL_STORAGE_KEY_URL) || '';
+  const key = (envKey && envKey.trim()) || localStorage.getItem(LOCAL_STORAGE_KEY_KEY) || '';
   return { url, key, isConfigured: Boolean(url && key && url.startsWith('http')) };
 }
 
