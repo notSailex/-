@@ -26,8 +26,7 @@ export function useAuth() {
   const [authError, setAuthError] = useState<string | null>(null);
 
   const syncUserFromSession = useCallback(async (sessionUser: any) => {
-    // Enforce email confirmation check: do not set user if email is unconfirmed
-    if (sessionUser && !sessionUser.email_confirmed_at) {
+    if (!sessionUser || !sessionUser.id) {
       setUser(null);
       wipeAllUserData();
       return null;
@@ -70,17 +69,17 @@ export function useAuth() {
 
     // Check remote session on load
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user && session.user.email_confirmed_at) {
+      if (session?.user) {
         syncUserFromSession(session.user);
       } else {
-        // No active or confirmed session - ensure clean state
+        // No active session - ensure clean state
         setUser(null);
         wipeAllUserData();
       }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT' || !session?.user || !session.user.email_confirmed_at) {
+      if (event === 'SIGNED_OUT' || !session?.user) {
         setUser(null);
         wipeAllUserData();
       } else if (session?.user) {
@@ -121,18 +120,10 @@ export function useAuth() {
       if (error) {
         let msg = error.message;
         if (msg.includes('Email not confirmed')) {
-          msg = 'يرجى تأكيد بريدك الإلكتروني أولاً. تم إرسال رابط التفعيل إلى بريدك، يرجى النقر عليه لتفعيل حسابك والدخول.';
+          msg = 'يرجى تأكيد بريدك الإلكتروني أولاً، أو تعطيل خيار تأكيد البريد من لوحة التحكم.';
         } else if (msg.includes('Invalid login credentials')) {
           msg = 'بيانات الدخول غير صحيحة، يرجى التأكد من البريد وكلمة المرور.';
         }
-        setAuthError(msg);
-        setIsLoading(false);
-        return { success: false, error: msg };
-      }
-
-      if (data.user && !data.user.email_confirmed_at) {
-        await supabase.auth.signOut();
-        const msg = 'يرجى تأكيد بريدك الإلكتروني أولاً لتفعيل حسابك وتجهيز مساحتك الخاصة.';
         setAuthError(msg);
         setIsLoading(false);
         return { success: false, error: msg };
@@ -186,7 +177,14 @@ export function useAuth() {
         return { success: false, error: msg };
       }
 
-      // If email confirmation is required:
+      // If auto-logged in (Confirm email is OFF in Supabase):
+      if (data.session && data.user) {
+        await syncUserFromSession(data.user);
+        setIsLoading(false);
+        return { success: true, requiresEmailConfirmation: false };
+      }
+
+      // If Supabase still requires email confirmation:
       if (data.user && !data.user.email_confirmed_at && !data.session) {
         setUser(null);
         setIsLoading(false);
@@ -197,8 +195,7 @@ export function useAuth() {
         };
       }
 
-      // If auto-confirmed
-      if (data.session && data.user && data.user.email_confirmed_at) {
+      if (data.user) {
         await syncUserFromSession(data.user);
         setIsLoading(false);
         return { success: true, requiresEmailConfirmation: false };
@@ -207,9 +204,8 @@ export function useAuth() {
       setUser(null);
       setIsLoading(false);
       return {
-        success: true,
-        requiresEmailConfirmation: true,
-        email,
+        success: false,
+        error: 'تعذر استكمال التسجيل',
       };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'حدث خطأ أثناء إنشاء الحساب';
