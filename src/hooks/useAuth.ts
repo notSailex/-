@@ -172,9 +172,18 @@ export function useAuth() {
         }
       });
       if (error) {
-        setAuthError(error.message);
+        let msg = error.message;
+        const lower = msg.toLowerCase();
+        if (lower.includes('rate limit')) {
+          msg = 'تم تجاوز الحد الأقصى لإرسال رسائل التفعيل مؤقتاً. يرجى الانتظار قليلاً ثم المحاولة مرة أخرى.';
+        } else if (lower.includes('already registered') || lower.includes('user already exists')) {
+          msg = 'هذا البريد مسجل مسبقاً، يرجى الانتقال إلى تبويب "تسجيل الدخول".';
+        } else if (lower.includes('password')) {
+          msg = 'كلمة المرور يجب أن تكون 6 أحرف أو أرقام على الأقل.';
+        }
+        setAuthError(msg);
         setIsLoading(false);
-        return { success: false, error: error.message };
+        return { success: false, error: msg };
       }
 
       // If email confirmation is required:
