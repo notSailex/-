@@ -93,10 +93,14 @@ export const AdminControlCenter: React.FC<AdminControlCenterProps> = ({
   const [newBookCover, setNewBookCover] = useState('https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&q=80');
   const [newBookSummary, setNewBookSummary] = useState('');
 
-  // Initial load
+  // Initial load and tab auto-refresh
   useEffect(() => {
-    loadOverviewData();
-  }, []);
+    if (activeSubTab === 'overview') {
+      loadOverviewData();
+    } else if (activeSubTab === 'users') {
+      loadUsersData();
+    }
+  }, [activeSubTab]);
 
   const loadOverviewData = async () => {
     setIsLoadingStats(true);
@@ -116,11 +120,12 @@ export const AdminControlCenter: React.FC<AdminControlCenterProps> = ({
     setIsLoadingUsers(false);
   };
 
-  useEffect(() => {
-    if (activeSubTab === 'users') {
-      loadUsersData();
-    }
-  }, [activeSubTab]);
+  const handleRefreshAllAdminData = async () => {
+    await Promise.all([
+      loadOverviewData(),
+      activeSubTab === 'users' ? loadUsersData() : Promise.resolve(),
+    ]);
+  };
 
   // Promote / Demote user role
   const handleToggleUserRole = async (targetUser: AdminUserRecord) => {
@@ -260,6 +265,18 @@ export const AdminControlCenter: React.FC<AdminControlCenterProps> = ({
                 {latency !== null ? `${latency}ms` : '—'}
               </span>
             </div>
+
+            {/* زر تحديث البيانات */}
+            <button
+              type="button"
+              onClick={handleRefreshAllAdminData}
+              disabled={isLoadingStats || isLoadingUsers}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 text-amber-500 dark:text-amber-400 text-xs font-bold transition-all shadow-xs disabled:opacity-50"
+              title="تحديث البيانات والإحصائيات الحقيقية"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isLoadingStats || isLoadingUsers ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">تحديث البيانات</span>
+            </button>
 
             <button
               type="button"
@@ -507,6 +524,7 @@ export const AdminControlCenter: React.FC<AdminControlCenterProps> = ({
                     <th className="pb-3 pr-2">المستخدم</th>
                     <th className="pb-3">البريد الإلكتروني</th>
                     <th className="pb-3">الرتبة</th>
+                    <th className="pb-3 text-center">النشاط (يوميات / ملاحظات)</th>
                     <th className="pb-3">تاريخ الانضمام</th>
                     <th className="pb-3 pl-2 text-left">إجراءات الصلاحية</th>
                   </tr>
@@ -519,7 +537,7 @@ export const AdminControlCenter: React.FC<AdminControlCenterProps> = ({
                           <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs ${
                             u.role === 'admin' ? 'bg-amber-500 text-black' : 'bg-black/[0.05] dark:bg-white/[0.08] text-[var(--color-text-primary)]'
                           }`}>
-                            {u.role === 'admin' ? <Crown className="w-3.5 h-3.5 fill-current" /> : u.name[0]}
+                            {u.role === 'admin' ? <Crown className="w-3.5 h-3.5 fill-current" /> : (u.name ? u.name[0] : 'U')}
                           </div>
                           <span>{u.name}</span>
                         </div>
@@ -537,6 +555,13 @@ export const AdminControlCenter: React.FC<AdminControlCenterProps> = ({
                             مستخدم عادي
                           </span>
                         )}
+                      </td>
+                      <td className="py-3.5 text-center">
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-black/[0.03] dark:bg-white/[0.05] text-[11px] font-sans">
+                          <span title="عدد اليوميات" className="text-emerald-500 font-bold">{toArabicNumerals(u.journalsCount || 0)} 📖</span>
+                          <span className="text-[var(--color-text-muted)]">/</span>
+                          <span title="عدد الملاحظات" className="text-amber-500 font-bold">{toArabicNumerals(u.notesCount || 0)} 📝</span>
+                        </div>
                       </td>
                       <td className="py-3.5 text-[var(--color-text-muted)] text-[11px]">
                         {new Date(u.createdAt).toLocaleDateString('ar-SA')}

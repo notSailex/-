@@ -241,6 +241,142 @@ CREATE POLICY "User Delete trmez-media"
   USING (bucket_id = 'trmez-media' AND auth.role() = 'authenticated');
 
 -- ==============================================================================
+-- دوال لوحة تحكم الأدمن بصلاحية عليا (SECURITY DEFINER)
+-- تحسب الإحصائيات الحقيقية لكامل قاعدة البيانات وتجلب قائمة المستخدمين
+-- دون كشف أي محتوى خاص من اليوميات أو الملاحظات، وتتأكد من صلاحية الأدمن
+-- ==============================================================================
+
+-- 1. دالة حساب الإحصائيات الإجمالية الحقيقية لقاعدة البيانات
+CREATE OR REPLACE FUNCTION public.get_admin_dashboard_stats()
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth
+AS $$
+DECLARE
+  is_admin BOOLEAN := FALSE;
+  users_cnt BIGINT := 0;
+  journals_cnt BIGINT := 0;
+  notes_cnt BIGINT := 0;
+  books_cnt BIGINT := 0;
+  sessions_cnt BIGINT := 0;
+BEGIN
+  -- التحقق الصارم من أن المستعلم يحمل رتبة admin في profiles
+  SELECT (role = 'admin') INTO is_admin
+  FROM public.profiles
+  WHERE id = auth.uid();
+
+  IF is_admin IS NOT TRUE THEN
+    RAISE EXCEPTION 'Access denied: Requires administrator privilege';
+  END IF;
+
+  -- حساب الأرقام الإجمالية الحقيقية من كامل جداول النظام
+  SELECT COUNT(*) INTO users_cnt FROM auth.users;
+  SELECT COUNT(*) INTO journals_cnt FROM public.journals;
+  SELECT COUNT(*) INTO notes_cnt FROM public.notes;
+  SELECT COUNT(*) INTO books_cnt FROM public.books;
+  SELECT COUNT(*) INTO sessions_cnt FROM public.pomodoro_sessions;
+
+  RETURN jsonb_build_object(
+    'totalUsersCount', users_cnt,
+    'totalJournalsCount', journals_cnt,
+    'totalNotesCount', notes_cnt,
+    'totalBooksCount', books_cnt,
+    'totalFocusSessionsCount', sessions_cnt
+  );
+END;
+$$;
+
+-- 2. دالة إرجاع قائمة المستخدمين مع عدد نشاطهم لتبويب إدارة المستخدمين
+CREATE OR REPLACE FUNCTION public.get_all_users_for_admin()
+RETURNS TABLE (
+  id UUID,
+  email TEXT,
+  name TEXT,
+  role TEXT,
+  created_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ,
+  journals_count BIGINT,
+  notes_count BIGINT
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth
+AS $$
+DECLARE
+  is_admin BOOLEAN := FALSE;
+BEGIN
+  -- التحقق من صلاحية الأدمن
+  SELECT (p.role = 'admin') INTO is_admin
+  FROM public.profiles p
+  WHERE p.id = auth.uid();
+
+  IF is_admin IS NOT TRUE THEN
+    RAISE EXCEPTION 'Access denied: Requires administrator privilege';
+  END IF;
+
+  RETURN QUERY
+  SELECT 
+    u.id,
+    COALESCE(u.email::TEXT, p.email, '') AS email,
+    COALESCE(p.name, u.raw_user_meta_data->>'full_name', split_part(u.email::TEXT, '@', 1), 'مستخدم') AS name,
+    COALESCE(p.role, 'user') AS role,
+    COALESCE(p.created_at, u.created_at) AS created_at,
+    COALESCE(p.updated_at, u.created_at) AS updated_at,
+    (SELECT COUNT(*) FROM public.journals j WHERE j.user_id = u.id) AS journals_count,
+    (SELECT COUNT(*) FROM public.notes n WHERE n.user_id = u.id) AS notes_count
+  FROM auth.users u
+  LEFT JOIN public.profiles p ON u.id = p.id
+  ORDER BY u.created_at DESC;
+END;
+$$;
+
+-- 3. دالة تعديل صلاحية المستخدم (ترقية أو تخفيض) بأمان
+CREATE OR REPLACE FUNCTION public.set_user_role_for_admin(target_user_id UUID, target_role TEXT)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  is_admin BOOLEAN := FALSE;
+BEGIN
+  SELECT (role = 'admin') INTO is_admin
+  FROM public.profiles
+  WHERE id = auth.uid();
+
+  IF is_admin IS NOT TRUE THEN
+    RAISE EXCEPTION 'Access denied: Requires administrator privilege';
+  END IF;
+
+  IF target_role NOT IN ('admin', 'user') THEN
+    RAISE EXCEPTION 'Invalid role: must be admin or user';
+  END IF;
+
+  UPDATE public.profiles
+  SET role = target_role, updated_at = now()
+  WHERE id = target_user_id;
+
+  RETURN TRUE;
+END;
+$$;
+
+-- منح إذن الاستدعاء للمستخدمين المسجلين (الدوال تتحقق داخلياً من صلاحية الأدمن)
+GRANT EXECUTE ON FUNCTION public.get_admin_dashboard_stats() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_all_users_for_admin() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.set_user_role_for_admin(UUID, TEXT) TO authenticated;
+
+-- مزامنة الحسابات السابقة التي قد تكون مسجلة في auth.users ولم يُنشأ لها صف في profiles
+INSERT INTO public.profiles (id, email, name, role)
+SELECT 
+  u.id, 
+  u.email, 
+  COALESCE(u.raw_user_meta_data->>'full_name', split_part(u.email, '@', 1)), 
+  'user'
+FROM auth.users u
+ON CONFLICT (id) DO NOTHING;
+
+-- ==============================================================================
 -- كيفية تعيين حسابك كـ "أدمن" (Admin):
 -- بعد تسجيل حسابك بالبريد الإلكتروني في التطبيق، قم بتشغيل الأمر التالي:
 -- UPDATE public.profiles SET role = 'admin' WHERE email = 'ضع_بريدك_هنا@example.com';

@@ -633,6 +633,23 @@ export async function fetchAdminSystemStats(): Promise<AdminSystemStats | null> 
   if (!supabase) return null;
 
   try {
+    // 1. محاولة استدعاء الدالة الآمنة (RPC with SECURITY DEFINER) لحساب الإحصاءات الحقيقية لكامل قاعدة البيانات
+    const { data: rpcData, error: rpcError } = await supabase.rpc('get_admin_dashboard_stats');
+    if (!rpcError && rpcData) {
+      return {
+        totalUsersCount: Number(rpcData.totalUsersCount) || 0,
+        totalJournalsCount: Number(rpcData.totalJournalsCount) || 0,
+        totalNotesCount: Number(rpcData.totalNotesCount) || 0,
+        totalBooksCount: Number(rpcData.totalBooksCount) || 0,
+        totalFocusSessionsCount: Number(rpcData.totalFocusSessionsCount) || 0,
+      };
+    }
+
+    if (rpcError) {
+      console.warn('get_admin_dashboard_stats RPC failed or not installed yet, falling back to direct count:', rpcError.message);
+    }
+
+    // 2. خطة بديلة (Fallback) في حال لم يتم تشغيل دالة الـ RPC بعد في قاعدة البيانات
     const [profilesRes, journalsRes, notesRes, booksRes, sessionsRes] = await Promise.all([
       supabase.from('profiles').select('id', { count: 'exact', head: true }),
       supabase.from('journals').select('id', { count: 'exact', head: true }),
@@ -665,6 +682,8 @@ export interface AdminUserRecord {
   role: 'user' | 'admin';
   createdAt: string;
   updatedAt: string;
+  journalsCount?: number;
+  notesCount?: number;
 }
 
 export interface GlobalAnnouncement {
@@ -687,6 +706,26 @@ export async function fetchAllUsers(): Promise<AdminUserRecord[]> {
   if (!supabase) return [];
 
   try {
+    // 1. استدعاء الدالة الآمنة (RPC with SECURITY DEFINER) لجلب قائمة الحسابات وإحصاءاتها الحقيقية
+    const { data: rpcData, error: rpcError } = await supabase.rpc('get_all_users_for_admin');
+    if (!rpcError && Array.isArray(rpcData) && rpcData.length > 0) {
+      return rpcData.map((row: any) => ({
+        id: row.id,
+        email: row.email || '',
+        name: row.name || 'مستخدم',
+        role: row.role || 'user',
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        journalsCount: Number(row.journals_count) || 0,
+        notesCount: Number(row.notes_count) || 0,
+      }));
+    }
+
+    if (rpcError) {
+      console.warn('get_all_users_for_admin RPC failed or not installed yet, falling back to profiles table:', rpcError.message);
+    }
+
+    // 2. خطة بديلة مباشرة من جدول profiles
     const { data, error } = await supabase
       .from('profiles')
       .select('id, email, name, role, created_at, updated_at')
@@ -713,6 +752,17 @@ export async function updateUserRole(userId: string, newRole: 'admin' | 'user'):
   if (!supabase) return false;
 
   try {
+    // 1. محاولة تعديل الدور عبر دالة RPC الآمنة
+    const { data: rpcSuccess, error: rpcError } = await supabase.rpc('set_user_role_for_admin', {
+      target_user_id: userId,
+      target_role: newRole,
+    });
+
+    if (!rpcError && rpcSuccess) {
+      return true;
+    }
+
+    // 2. بديل مباشر بتحديث جدول profiles
     const { error } = await supabase
       .from('profiles')
       .update({ role: newRole, updated_at: new Date().toISOString() })
