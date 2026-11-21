@@ -130,19 +130,24 @@ export async function saveUserJournal(userId: string, entry: JournalEntry): Prom
   if (!supabase) return false;
 
   try {
+    // معرف فريد لكل مستخدم وكل تاريخ لتفادي تصادم المفتاح الأساسي (journals_pkey) بين مختلف الحسابات
+    const entryId = entry.id && entry.id.startsWith(`entry-${userId}-`)
+      ? entry.id
+      : `entry-${userId}-${entry.date}`;
+
     const { error } = await supabase
       .from('journals')
       .upsert({
-        id: entry.id || `entry-${entry.date}`,
+        id: entryId,
         user_id: userId,
         date: entry.date,
-        title: entry.title,
-        content: entry.content,
+        title: entry.title || '',
+        content: entry.content || '',
         mood: entry.mood,
         weather: entry.weather,
-        tags: entry.tags,
-        word_count: entry.wordCount,
-        reading_time_minutes: entry.readingTimeMinutes,
+        tags: entry.tags || [],
+        word_count: entry.wordCount || 0,
+        reading_time_minutes: entry.readingTimeMinutes || 1,
         drawing_data: entry.drawingData,
         images: entry.images || [],
         favorite: entry.favorite || false,

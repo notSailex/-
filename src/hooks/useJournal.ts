@@ -16,6 +16,21 @@ export function useJournal(userId?: string) {
   const [pageTurnDirection, setPageTurnDirection] = useState<'left' | 'right' | null>(null);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const latestEntryRef = useRef<JournalEntry | null>(null);
+  const userIdRef = useRef(userId);
+  userIdRef.current = userId;
+
+  // Flush pending save on unmount or user change
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      if (userIdRef.current && latestEntryRef.current) {
+        saveUserJournal(userIdRef.current, latestEntryRef.current);
+      }
+    };
+  }, []);
 
   // Listen to global wipe event (logout or user switch)
   useEffect(() => {
@@ -59,7 +74,7 @@ export function useJournal(userId?: string) {
       return entries[selectedDate];
     }
     return {
-      id: `entry-${selectedDate}`,
+      id: userId ? `entry-${userId}-${selectedDate}` : `entry-${selectedDate}`,
       date: selectedDate,
       title: '',
       content: '',
@@ -71,7 +86,7 @@ export function useJournal(userId?: string) {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-  }, [entries, selectedDate]);
+  }, [entries, selectedDate, userId]);
 
   // Update active entry with debounce auto-save
   const updateCurrentEntry = useCallback((updates: Partial<JournalEntry>) => {
@@ -81,7 +96,7 @@ export function useJournal(userId?: string) {
 
     setEntries((prev) => {
       const existing = prev[selectedDate] || {
-        id: `entry-${selectedDate}`,
+        id: userId ? `entry-${userId}-${selectedDate}` : `entry-${selectedDate}`,
         date: selectedDate,
         title: '',
         content: '',
@@ -107,6 +122,7 @@ export function useJournal(userId?: string) {
       };
 
       updatedEntryRef = updated;
+      latestEntryRef.current = updated;
 
       return {
         ...prev,
@@ -119,9 +135,11 @@ export function useJournal(userId?: string) {
     }
     debounceTimerRef.current = setTimeout(async () => {
       if (userId && updatedEntryRef) {
-        await saveUserJournal(userId, updatedEntryRef);
+        const ok = await saveUserJournal(userId, updatedEntryRef);
+        setSaveStatus(ok ? 'saved' : 'unsaved');
+      } else {
+        setSaveStatus('saved');
       }
-      setSaveStatus('saved');
     }, 600);
   }, [selectedDate, userId]);
 
