@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { getStoredSupabaseConfig, saveStoredSupabaseConfig } from '../../lib/supabaseClient';
-import { X, Lock, Mail, User, Shield, Sparkles, Key, Check, AlertCircle } from 'lucide-react';
+import { X, Lock, Mail, User, Shield, Sparkles, Key, Check, AlertCircle, Feather } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import { cn } from '../../lib/utils';
 
 interface AuthModalProps {
@@ -17,6 +18,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [name, setName] = useState('');
   const [showConfig, setShowConfig] = useState(false);
   const [pendingConfirmationEmail, setPendingConfirmationEmail] = useState<string | null>(null);
+  const [registeredSuccessName, setRegisteredSuccessName] = useState<string | null>(null);
 
   // Config fields
   const currentConfig = getStoredSupabaseConfig();
@@ -37,7 +39,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         if (res.requiresEmailConfirmation) {
           setPendingConfirmationEmail(res.email || email);
         } else {
-          onClose();
+          try {
+            confetti({
+              particleCount: 80,
+              spread: 70,
+              origin: { y: 0.6 },
+              colors: ['#E09F3E', '#F4A261', '#588157', '#E7DEC8', '#D49838']
+            });
+          } catch {
+            // ignore
+          }
+          setRegisteredSuccessName(name.trim() || 'صديقنا الكاتب');
         }
       }
     }
@@ -56,26 +68,70 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         {/* Close Button */}
         <button
           type="button"
-          onClick={onClose}
+          onClick={() => {
+            setRegisteredSuccessName(null);
+            onClose();
+          }}
           className="absolute top-5 left-5 p-1.5 rounded-full text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-black/[0.05] dark:hover:bg-white/[0.08] transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
 
-        {/* Header */}
-        <div className="text-center mb-6">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#B87B22] to-[#D49838] dark:from-[#9E6518] dark:to-[#B87B22] text-white flex items-center justify-center mx-auto mb-3 shadow-sm shadow-[#B87B22]/15">
-            <Lock className="w-6 h-6" />
+        {registeredSuccessName ? (
+          <div className="text-center py-3 space-y-5 animate-fade-in">
+            {/* Glowing Icon */}
+            <div className="relative mx-auto w-16 h-16">
+              <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-[#B87B22] via-[#D49838] to-[#E09F3E] text-white flex items-center justify-center mx-auto shadow-lg shadow-[#E09F3E]/25">
+                <Sparkles className="w-8 h-8 animate-pulse" />
+              </div>
+            </div>
+
+            {/* Welcoming Title & Subtitle */}
+            <div className="space-y-1.5">
+              <h3 className="text-2xl sm:text-3xl font-serif font-bold text-[var(--color-text-primary)]">
+                أهلاً {registeredSuccessName} ✨
+              </h3>
+              <p className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                تم إنشاء الحساب بنجاح
+              </p>
+            </div>
+
+            {/* Beautiful Literary Sentence */}
+            <div className="p-4.5 rounded-2xl bg-black/[0.03] dark:bg-[var(--color-bg-surface)] border border-black/[0.06] dark:border-[var(--color-border-subtle)] text-center">
+              <p className="text-xs sm:text-sm text-[#4A4237] dark:text-[#E2DACB] font-serif leading-relaxed italic">
+                «مرحباً بك في واحتك الهادئة.. هنا تجد كلماتك مأواها وتفيض خواطرك سكينة، فابدأ رحلة تدوين تليق بك وبأيامك الجميلة.»
+              </p>
+            </div>
+
+            {/* Start Button */}
+            <button
+              type="button"
+              onClick={() => {
+                setRegisteredSuccessName(null);
+                onClose();
+              }}
+              className="w-full py-3 rounded-2xl text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-[#B87B22] to-[#E09F3E] hover:from-[#A56B1A] hover:to-[#B87B22] shadow-md shadow-[#E09F3E]/20 transition-all flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.98]"
+            >
+              <Feather className="w-4 h-4" />
+              <span>ابدأ رحلتك واستكشف خزينتك</span>
+            </button>
           </div>
-          <h3 className="text-2xl font-serif font-bold text-[var(--color-text-primary)]">
-            {user && !user.isGuest ? 'حسابك الشخصي' : 'بوابة الخزينة الهادئة'}
-          </h3>
-          <p className="text-xs text-[#7E786E] dark:text-[var(--color-text-muted)] mt-1">
-            {isSupabaseConnected
-              ? 'متصل بالسحابة بأمان وتشفير كامل'
-              : 'يعمل حالياً في نمط الخزينة المحلية المحمية على جهازك'}
-          </p>
-        </div>
+        ) : (
+          <>
+            {/* Header */}
+            <div className="text-center mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#B87B22] to-[#D49838] dark:from-[#9E6518] dark:to-[#B87B22] text-white flex items-center justify-center mx-auto mb-3 shadow-sm shadow-[#B87B22]/15">
+                <Lock className="w-6 h-6" />
+              </div>
+              <h3 className="text-2xl font-serif font-bold text-[var(--color-text-primary)]">
+                {user && !user.isGuest ? 'حسابك الشخصي' : 'بوابة الخزينة الهادئة'}
+              </h3>
+              <p className="text-xs text-[#7E786E] dark:text-[var(--color-text-muted)] mt-1">
+                {isSupabaseConnected
+                  ? 'متصل بالسحابة بأمان وتشفير كامل'
+                  : 'يعمل حالياً في نمط الخزينة المحلية المحمية على جهازك'}
+              </p>
+            </div>
 
         {pendingConfirmationEmail ? (
           <div className="text-center py-4 space-y-4 animate-fade-in">
@@ -261,6 +317,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             </div>
           </>
         )}
+      </>
+    )}
 
         {/* Cloud Config Collapsible Section - Admin Only */}
         {user?.isAdmin && (
