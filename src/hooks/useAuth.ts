@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { UserProfile } from '../types/journal';
 import { getSupabase, isSupabaseReady } from '../lib/supabaseClient';
 import { fetchUserProfile } from '../lib/supabaseService';
+import { wipeAllUserData } from '../lib/storage';
 
 const LOCAL_USER_KEY = 'trmez_auth_user_v2';
 
@@ -25,6 +26,13 @@ export function useAuth() {
   const [authError, setAuthError] = useState<string | null>(null);
 
   const syncUserFromSession = useCallback(async (sessionUser: any) => {
+    // Enforce email confirmation check: do not set user if email is unconfirmed
+    if (sessionUser && !sessionUser.email_confirmed_at) {
+      setUser(null);
+      wipeAllUserData();
+      return null;
+    }
+
     try {
       const profile = await fetchUserProfile(sessionUser.id);
       const u: UserProfile = {
@@ -60,23 +68,35 @@ export function useAuth() {
     const supabase = getSupabase();
     if (!supabase) return;
 
-    // Check remote session
+    // Check remote session on load
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
+      if (session?.user && session.user.email_confirmed_at) {
         syncUserFromSession(session.user);
       } else {
-        // No active session
+        // No active or confirmed session - ensure clean state
         setUser(null);
-        localStorage.removeItem(LOCAL_USER_KEY);
+        wipeAllUserData();
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        syncUserFromSession(session.user);
-      } else {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || !session?.user || !session.user.email_confirmed_at) {
         setUser(null);
-        localStorage.removeItem(LOCAL_USER_KEY);
+        wipeAllUserData();
+      } else if (session?.user) {
+        // If switching between different accounts, purge local state first
+        const currentStored = localStorage.getItem(LOCAL_USER_KEY);
+        if (currentStored) {
+          try {
+            const parsed = JSON.parse(currentStored);
+            if (parsed.id && parsed.id !== session.user.id) {
+              wipeAllUserData();
+            }
+          } catch {
+            // ignore
+          }
+        }
+        syncUserFromSession(session.user);
       }
     });
 
@@ -91,20 +111,9 @@ export function useAuth() {
     const supabase = getSupabase();
 
     if (!supabase) {
-      // Offline fallback login
-      const localUser: UserProfile = {
-        id: `local-${Date.now()}`,
-        email,
-        name: email.split('@')[0] || 'كاتب',
-        isGuest: false,
-        role: 'user',
-        isAdmin: false,
-        joinedDate: new Date().toISOString(),
-      };
-      setUser(localUser);
-      localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(localUser));
+      setAuthError('تعذر الاتصال بالخادم السحابي حالياً.');
       setIsLoading(false);
-      return { success: true };
+      return { success: false, error: 'تعذر الاتصال بالخادم السحابي حالياً.' };
     }
 
     try {
@@ -112,7 +121,7 @@ export function useAuth() {
       if (error) {
         let msg = error.message;
         if (msg.includes('Email not confirmed')) {
-          msg = 'يرجى تأكيد بريدك الإلكتروني، أو إيقاف خيار Confirm Email من Supabase لتسجيل الدخول الفوري الدائم.';
+          msg = 'يرجى تأكيد بريدك الإلكتروني أولاً. تم إرسال رابط التفعيل إلى بريدك، يرجى النقر عليه لتفعيل حسابك والدخول.';
         } else if (msg.includes('Invalid login credentials')) {
           msg = 'بيانات الدخول غير صحيحة، يرجى التأكد من البريد وكلمة المرور.';
         }
@@ -120,6 +129,15 @@ export function useAuth() {
         setIsLoading(false);
         return { success: false, error: msg };
       }
+
+      if (data.user && !data.user.email_confirmed_at) {
+        await supabase.auth.signOut();
+        const msg = 'يرجى تأكيد بريدك الإلكتروني أولاً لتفعيل حسابك وتجهيز مساحتك الخاصة.';
+        setAuthError(msg);
+        setIsLoading(false);
+        return { success: false, error: msg };
+      }
+
       if (data.user) {
         await syncUserFromSession(data.user);
       }
@@ -139,19 +157,9 @@ export function useAuth() {
     const supabase = getSupabase();
 
     if (!supabase) {
-      const localUser: UserProfile = {
-        id: `local-${Date.now()}`,
-        email,
-        name: name || email.split('@')[0] || 'كاتب',
-        isGuest: false,
-        role: 'user',
-        isAdmin: false,
-        joinedDate: new Date().toISOString(),
-      };
-      setUser(localUser);
-      localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(localUser));
+      setAuthError('تعذر الاتصال بالخادم السحابي حالياً.');
       setIsLoading(false);
-      return { success: true };
+      return { success: false, error: 'تعذر الاتصال بالخادم السحابي حالياً.' };
     }
 
     try {
@@ -159,7 +167,8 @@ export function useAuth() {
         email,
         password,
         options: {
-          data: { full_name: name }
+          data: { full_name: name },
+          emailRedirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
         }
       });
       if (error) {
@@ -168,27 +177,31 @@ export function useAuth() {
         return { success: false, error: error.message };
       }
 
-      // If session is already created (Confirm Email disabled in Supabase)
-      if (data.session && data.user) {
-        await syncUserFromSession(data.user);
+      // If email confirmation is required:
+      if (data.user && !data.user.email_confirmed_at && !data.session) {
+        setUser(null);
         setIsLoading(false);
-        return { success: true };
+        return {
+          success: true,
+          requiresEmailConfirmation: true,
+          email,
+        };
       }
 
-      // Try immediate sign-in in case it was auto-confirmed
-      const signInRes = await supabase.auth.signInWithPassword({ email, password });
-      if (signInRes.data?.session && signInRes.data?.user) {
-        await syncUserFromSession(signInRes.data.user);
+      // If auto-confirmed
+      if (data.session && data.user && data.user.email_confirmed_at) {
+        await syncUserFromSession(data.user);
         setIsLoading(false);
-        return { success: true };
+        return { success: true, requiresEmailConfirmation: false };
       }
 
-      if (data.user) {
-        await syncUserFromSession(data.user);
-        setAuthError('تم إنشاء الحساب! إذا طلبت Supabase تأكيد الإيميل، يرجى مراجعة بريدك أو إيقاف خيار Confirm Email من لوحة تحكم Supabase.');
-      }
+      setUser(null);
       setIsLoading(false);
-      return { success: true };
+      return {
+        success: true,
+        requiresEmailConfirmation: true,
+        email,
+      };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'حدث خطأ أثناء إنشاء الحساب';
       setAuthError(msg);
@@ -207,7 +220,7 @@ export function useAuth() {
       }
     }
     setUser(null);
-    localStorage.removeItem(LOCAL_USER_KEY);
+    wipeAllUserData();
   };
 
   const refreshProfile = async () => {
@@ -226,9 +239,8 @@ export function useAuth() {
   };
 
   const setGuestMode = () => {
-    // Mode for exploring without logging in (read-only preview)
     setUser(null);
-    localStorage.removeItem(LOCAL_USER_KEY);
+    wipeAllUserData();
   };
 
   return {

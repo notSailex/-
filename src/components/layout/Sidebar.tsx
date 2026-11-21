@@ -141,7 +141,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {user?.isAdmin && <Crown className="w-3 h-3 text-amber-500 shrink-0 fill-current" />}
               </div>
               <div className="text-[10px] text-[var(--color-text-muted)] truncate">
-                {user?.isAdmin ? 'مسؤول النظام (Admin)' : user?.isGuest ? 'تخزين محلي آمن' : 'مزامنة Supabase'}
+                {user?.isAdmin ? 'مسؤول النظام (Admin)' : user?.isGuest ? 'تخزين محلي مؤقت' : 'مزامنة سحابية نشطة'}
               </div>
             </div>
           </div>

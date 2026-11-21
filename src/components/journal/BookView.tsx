@@ -205,6 +205,8 @@ export const BookView: React.FC<BookViewProps> = ({
                       onUpdate={handleUpdate}
                       saveStatus={saveStatus}
                       settings={settings}
+                      isVisitor={!user || user.isGuest}
+                      onRequireAuth={onRequireAuth}
                     />
                   </div>
                 </div>
@@ -217,6 +219,8 @@ export const BookView: React.FC<BookViewProps> = ({
                       onUpdate={handleUpdate}
                       saveStatus={saveStatus}
                       settings={settings}
+                      isVisitor={!user || user.isGuest}
+                      onRequireAuth={onRequireAuth}
                     />
                   ) : (
                     <div className="h-full overflow-y-auto">

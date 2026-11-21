@@ -30,7 +30,7 @@ interface QuickNotesViewProps {
 }
 
 export const QuickNotesView: React.FC<QuickNotesViewProps> = ({ user, onRequireAuth }) => {
-  const [notes, setNotes] = useState<QuickNote[]>(() => loadStoredNotes());
+  const [notes, setNotes] = useState<QuickNote[]>(() => (user && !user.isGuest ? loadStoredNotes() : []));
   const [viewMode, setViewMode] = useState<'list' | 'editor'>('list');
   const [editorMode, setEditorMode] = useState<'text' | 'drawing'>('text');
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
@@ -39,9 +39,29 @@ export const QuickNotesView: React.FC<QuickNotesViewProps> = ({ user, onRequireA
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving'>('saved');
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Global wipe event listener
+  useEffect(() => {
+    const handleWipe = () => {
+      setNotes([]);
+      setActiveNoteId(null);
+      setViewMode('list');
+    };
+    window.addEventListener('trmez_wipe_user_data', handleWipe);
+    return () => window.removeEventListener('trmez_wipe_user_data', handleWipe);
+  }, []);
+
+  // Reset when user is null or guest
+  useEffect(() => {
+    if (!user || user.isGuest) {
+      setNotes([]);
+      setActiveNoteId(null);
+      setViewMode('list');
+    }
+  }, [user]);
+
   // Sync notes from Supabase when user logs in - Supabase is the single source of truth!
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id || user.isGuest) return;
     let isMounted = true;
     fetchUserNotes(user.id).then((remoteNotes) => {
       if (!isMounted) return;
@@ -59,17 +79,19 @@ export const QuickNotesView: React.FC<QuickNotesViewProps> = ({ user, onRequireA
     return () => {
       isMounted = false;
     };
-  }, [user?.id]);
+  }, [user?.id, user?.isGuest]);
 
   // Sync notes to localStorage
   const updateNotesList = (updated: QuickNote[]) => {
     setNotes(updated);
-    saveStoredNotes(updated);
+    if (user && !user.isGuest) {
+      saveStoredNotes(updated);
+    }
   };
 
   // Create a brand new note and immediately open it in the full editor
   const handleCreateNote = () => {
-    if (!user) {
+    if (!user || user.isGuest) {
       onRequireAuth?.();
       return;
     }
@@ -94,6 +116,10 @@ export const QuickNotesView: React.FC<QuickNotesViewProps> = ({ user, onRequireA
 
   // Open existing note in full editor
   const handleOpenNote = (id: string) => {
+    if (!user || user.isGuest) {
+      onRequireAuth?.();
+      return;
+    }
     setActiveNoteId(id);
     setViewMode('editor');
   };
@@ -107,7 +133,7 @@ export const QuickNotesView: React.FC<QuickNotesViewProps> = ({ user, onRequireA
   // Delete note
   const handleDeleteNote = async (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    if (!user) {
+    if (!user || user.isGuest) {
       onRequireAuth?.();
       return;
     }
@@ -218,6 +244,23 @@ export const QuickNotesView: React.FC<QuickNotesViewProps> = ({ user, onRequireA
             transition={{ duration: 0.2 }}
             className="space-y-6"
           >
+            {/* تنبيه الزائر */}
+            {(!user || user.isGuest) && (
+              <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-medium">
+                  <Lock className="w-4 h-4 shrink-0 text-amber-500" />
+                  <span>أنت تتصفح كزائر الخزينة — سجّل دخولك لكتابة وحفظ خواطرك وملاحظاتك بأمان على السحابة</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={onRequireAuth}
+                  className="px-4 py-2 rounded-xl font-bold bg-[var(--color-accent-warm)] text-white hover:opacity-90 shrink-0 shadow-xs text-xs"
+                >
+                  تسجيل الدخول / إنشاء حساب
+                </button>
+              </div>
+            )}
+
             {/* الترويسة الرئيسية مع زر إضافة ملاحظة جديدة */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl bg-[var(--color-bg-surface)] dark:bg-[var(--color-bg-card)] border border-[var(--color-border-subtle)] shadow-subtle dark:shadow-subtle-dark">
               <div>

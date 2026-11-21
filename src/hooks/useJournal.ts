@@ -11,15 +11,27 @@ import {
 } from '../lib/utils';
 
 export function useJournal(userId?: string) {
-  const [entries, setEntries] = useState<Record<string, JournalEntry>>(() => loadStoredEntries());
+  const [entries, setEntries] = useState<Record<string, JournalEntry>>(() => userId ? loadStoredEntries() : {});
   const [selectedDate, setSelectedDate] = useState<string>(getTodayISODate());
   const [pageTurnDirection, setPageTurnDirection] = useState<'left' | 'right' | null>(null);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Listen to global wipe event (logout or user switch)
+  useEffect(() => {
+    const handleWipe = () => {
+      setEntries({});
+    };
+    window.addEventListener('trmez_wipe_user_data', handleWipe);
+    return () => window.removeEventListener('trmez_wipe_user_data', handleWipe);
+  }, []);
+
   // Load from Supabase when user logs in - Supabase is the single source of truth!
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      setEntries({});
+      return;
+    }
 
     let isMounted = true;
     fetchUserJournals(userId).then((remoteMap) => {
@@ -36,8 +48,10 @@ export function useJournal(userId?: string) {
 
   // Sync to local storage whenever entries change
   useEffect(() => {
-    saveStoredEntries(entries);
-  }, [entries]);
+    if (userId) {
+      saveStoredEntries(entries);
+    }
+  }, [entries, userId]);
 
   // Current active entry or a clean blank structure for selectedDate
   const currentEntry = useMemo((): JournalEntry => {

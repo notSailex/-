@@ -407,6 +407,62 @@ export async function deleteUserFocusSession(userId: string, sessionId: string):
   }
 }
 
+const FALLBACK_FOCUS_SUBJECTS = ['برمجة', 'قراءة حرة', 'رياضيات', 'لغات', 'كتابة وأدب', 'عام'];
+
+export async function fetchUserFocusSubjects(userId: string): Promise<string[]> {
+  const supabase = getSupabase();
+  if (!supabase) return FALLBACK_FOCUS_SUBJECTS;
+
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('settings')
+      .eq('id', userId)
+      .single();
+
+    if (error || !data?.settings) return FALLBACK_FOCUS_SUBJECTS;
+    if (Array.isArray(data.settings.focusSubjects) && data.settings.focusSubjects.length > 0) {
+      return data.settings.focusSubjects;
+    }
+    return FALLBACK_FOCUS_SUBJECTS;
+  } catch (err) {
+    console.error('Error fetching focus subjects:', err);
+    return FALLBACK_FOCUS_SUBJECTS;
+  }
+}
+
+export async function saveUserFocusSubjects(userId: string, subjects: string[]): Promise<boolean> {
+  const supabase = getSupabase();
+  if (!supabase) return false;
+
+  try {
+    const { data } = await supabase
+      .from('profiles')
+      .select('settings')
+      .eq('id', userId)
+      .single();
+
+    const currentSettings = data?.settings || {};
+    const updatedSettings = {
+      ...currentSettings,
+      focusSubjects: subjects,
+    };
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        settings: updatedSettings,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', userId);
+
+    return !error;
+  } catch (err) {
+    console.error('Error saving focus subjects:', err);
+    return false;
+  }
+}
+
 // ============================================================================
 // 6. رفع الوسائط والصور إلى حاوية التخزين (Supabase Storage: trmez-media)
 // ============================================================================

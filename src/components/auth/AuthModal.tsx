@@ -16,6 +16,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [showConfig, setShowConfig] = useState(false);
+  const [pendingConfirmationEmail, setPendingConfirmationEmail] = useState<string | null>(null);
 
   // Config fields
   const currentConfig = getStoredSupabaseConfig();
@@ -32,7 +33,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       if (res.success) onClose();
     } else {
       const res = await registerWithEmail(email, password, name);
-      if (res.success) onClose();
+      if (res.success) {
+        if (res.requiresEmailConfirmation) {
+          setPendingConfirmationEmail(res.email || email);
+        } else {
+          onClose();
+        }
+      }
     }
   };
 
@@ -65,12 +72,42 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           </h3>
           <p className="text-xs text-[#7E786E] dark:text-[var(--color-text-muted)] mt-1">
             {isSupabaseConnected
-              ? 'متصل بقاعدة سحابة Supabase بأمان وتشفير كامل'
+              ? 'متصل بالسحابة بأمان وتشفير كامل'
               : 'يعمل حالياً في نمط الخزينة المحلية المحمية على جهازك'}
           </p>
         </div>
 
-        {user && !user.isGuest ? (
+        {pendingConfirmationEmail ? (
+          <div className="text-center py-4 space-y-4 animate-fade-in">
+            <div className="w-16 h-16 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20 flex items-center justify-center mx-auto mb-2">
+              <Mail className="w-8 h-8 animate-pulse" />
+            </div>
+            <h4 className="text-lg font-bold font-serif text-[var(--color-text-primary)]">
+              تأكيد البريد الإلكتروني مطلوب
+            </h4>
+            <p className="text-xs text-[#5C5549] dark:text-[#C4BCB0] leading-relaxed max-w-sm mx-auto">
+              تم إرسال رابط التفعيل إلى بريدك الإلكتروني:
+              <br />
+              <span className="font-mono font-bold text-amber-600 dark:text-amber-400 mt-1 inline-block">
+                {pendingConfirmationEmail}
+              </span>
+              <br />
+              يرجى الضغط على الرابط لتفعيل حسابك وتجهيز مساحتك الخاصة.
+            </p>
+            <div className="pt-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setPendingConfirmationEmail(null);
+                  setTab('login');
+                }}
+                className="w-full py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#C98829] to-[#E09F3E] hover:from-[#B5771F] hover:to-[#C98829] shadow-md shadow-[#E09F3E]/20 transition-all"
+              >
+                العودة إلى تسجيل الدخول
+              </button>
+            </div>
+          </div>
+        ) : user && !user.isGuest ? (
           // Already logged in view
           <div className="space-y-4">
             <div className="p-4 rounded-xl bg-black/[0.03] dark:bg-[var(--color-bg-surface)] border border-black/[0.06] dark:border-[var(--color-border-subtle)] text-center">
@@ -225,46 +262,48 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           </>
         )}
 
-        {/* Supabase Config Collapsible Section */}
-        <div className="mt-6 pt-4 border-t border-black/[0.06] dark:border-[var(--color-border-subtle)]">
-          <button
-            type="button"
-            onClick={() => setShowConfig(!showConfig)}
-            className="flex items-center justify-between w-full text-[11px] text-[#8C8476] hover:text-[#1D1A16] dark:hover:text-[#F3EFE6] transition-colors"
-          >
-            <span className="flex items-center gap-1.5">
-              <Key className="w-3 h-3 text-[#E09F3E]" />
-              <span>إعدادات ربط Supabase السحابي</span>
-            </span>
-            <span>{showConfig ? 'إخفاء' : 'تعديل'}</span>
-          </button>
+        {/* Cloud Config Collapsible Section - Admin Only */}
+        {user?.isAdmin && (
+          <div className="mt-6 pt-4 border-t border-black/[0.06] dark:border-[var(--color-border-subtle)]">
+            <button
+              type="button"
+              onClick={() => setShowConfig(!showConfig)}
+              className="flex items-center justify-between w-full text-[11px] text-[#8C8476] hover:text-[#1D1A16] dark:hover:text-[#F3EFE6] transition-colors"
+            >
+              <span className="flex items-center gap-1.5">
+                <Key className="w-3 h-3 text-[#E09F3E]" />
+                <span>إعدادات المزامنة السحابية المتقدمة</span>
+              </span>
+              <span>{showConfig ? 'إخفاء' : 'تعديل'}</span>
+            </button>
 
-          {showConfig && (
-            <form onSubmit={handleSaveConfig} className="mt-3 space-y-2 text-xs">
-              <input
-                type="url"
-                value={customUrl}
-                onChange={(e) => setCustomUrl(e.target.value)}
-                placeholder="https://xyz.supabase.co"
-                className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-black/30 border border-black/[0.08] dark:border-[var(--color-border-subtle)] text-[11px]"
-              />
-              <input
-                type="password"
-                value={customKey}
-                onChange={(e) => setCustomKey(e.target.value)}
-                placeholder="Supabase Anon Key"
-                className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-black/30 border border-black/[0.08] dark:border-[var(--color-border-subtle)] text-[11px]"
-              />
-              <button
-                type="submit"
-                className="w-full py-1.5 text-xs font-semibold bg-[#1D1A16] text-[#F3EFE6] dark:bg-[#F3EFE6] dark:text-[#1D1A16] rounded-lg transition-colors flex items-center justify-center gap-1"
-              >
-                {configSaved ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : null}
-                <span>{configSaved ? 'تم حفظ المفاتيح' : 'حفظ مفاتيح Supabase'}</span>
-              </button>
-            </form>
-          )}
-        </div>
+            {showConfig && (
+              <form onSubmit={handleSaveConfig} className="mt-3 space-y-2 text-xs">
+                <input
+                  type="url"
+                  value={customUrl}
+                  onChange={(e) => setCustomUrl(e.target.value)}
+                  placeholder="https://xyz.supabase.co"
+                  className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-black/30 border border-black/[0.08] dark:border-[var(--color-border-subtle)] text-[11px]"
+                />
+                <input
+                  type="password"
+                  value={customKey}
+                  onChange={(e) => setCustomKey(e.target.value)}
+                  placeholder="مفتاح الربط السحابي (Anon Key)"
+                  className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-black/30 border border-black/[0.08] dark:border-[var(--color-border-subtle)] text-[11px]"
+                />
+                <button
+                  type="submit"
+                  className="w-full py-1.5 text-xs font-semibold bg-[#1D1A16] text-[#F3EFE6] dark:bg-[#F3EFE6] dark:text-[#1D1A16] rounded-lg transition-colors flex items-center justify-center gap-1"
+                >
+                  {configSaved ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : null}
+                  <span>{configSaved ? 'تم حفظ الإعدادات' : 'حفظ إعدادات المزامنة'}</span>
+                </button>
+              </form>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

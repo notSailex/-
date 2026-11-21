@@ -59,6 +59,7 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({
 
   // Focus Sessions Analytics - load from Supabase for logged-in user, discarding mock demo sessions
   const [focusSessions, setFocusSessions] = useState<FocusSession[]>(() => {
+    if (!user || user.isGuest) return [];
     return loadStoredFocusSessions().filter(s =>
       s.id !== 'focus-1' &&
       s.id !== 'focus-2' &&
@@ -68,7 +69,15 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({
   });
 
   useEffect(() => {
-    if (!user?.id) {
+    const handleWipe = () => {
+      setFocusSessions([]);
+    };
+    window.addEventListener('trmez_wipe_user_data', handleWipe);
+    return () => window.removeEventListener('trmez_wipe_user_data', handleWipe);
+  }, []);
+
+  useEffect(() => {
+    if (!user?.id || user.isGuest) {
       setFocusSessions([]);
       return;
     }
@@ -87,7 +96,7 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [user?.id]);
+  }, [user?.id, user?.isGuest]);
 
   const totalFocusMinutes = useMemo(() => {
     return focusSessions.reduce((acc, s) => acc + s.durationMinutes, 0);

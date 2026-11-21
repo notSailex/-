@@ -208,7 +208,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           {user && !user.isGuest ? (
             <span className="px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
               <ShieldCheck className="w-3.5 h-3.5" />
-              <span>مزامنة سحابية نشطة (Supabase)</span>
+              <span>مزامنة سحابية نشطة ومحمية</span>
             </span>
           ) : (
             <span className="px-3 py-1 rounded-full text-xs font-medium bg-rose-500/10 text-rose-500 border border-rose-500/20 flex items-center gap-1">

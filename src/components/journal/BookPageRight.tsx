@@ -16,7 +16,8 @@ import {
   Trash2,
   X,
   ZoomIn,
-  Plus
+  Plus,
+  Lock
 } from 'lucide-react';
 import { StylusCanvas } from '../common/StylusCanvas';
 
@@ -25,6 +26,8 @@ interface BookPageRightProps {
   onUpdate: (updates: Partial<JournalEntry>) => void;
   saveStatus: 'saved' | 'saving' | 'unsaved';
   settings: AppSettings;
+  isVisitor?: boolean;
+  onRequireAuth?: () => void;
 }
 
 export const BookPageRight: React.FC<BookPageRightProps> = ({
@@ -32,6 +35,8 @@ export const BookPageRight: React.FC<BookPageRightProps> = ({
   onUpdate,
   saveStatus,
   settings,
+  isVisitor,
+  onRequireAuth,
 }) => {
   const [isZenMode, setIsZenMode] = useState(false);
   const [fontSizeOffset, setFontSizeOffset] = useState<number>(0);
@@ -263,6 +268,7 @@ export const BookPageRight: React.FC<BookPageRightProps> = ({
           type="text"
           value={entry.title}
           onChange={handleTitleChange}
+          readOnly={isVisitor}
           placeholder="عنوان التدوينة أو الفكرة الرئيسية..."
           className="w-full text-xl md:text-2xl font-display font-bold bg-transparent text-[#1D1A16] dark:text-[#F3EFE6] placeholder-[#5C5549] dark:placeholder-[var(--color-text-muted)] focus:outline-none tracking-tight py-1"
         />
@@ -270,6 +276,29 @@ export const BookPageRight: React.FC<BookPageRightProps> = ({
 
       {/* Main Content Area: Switches between Textarea and Stylus Canvas */}
       <div className="flex-1 min-h-0 relative flex flex-col overflow-y-auto scrollbar-thin">
+        {/* Visitor Lock Card Overlay */}
+        {isVisitor && (
+          <div className="absolute inset-0 z-30 backdrop-blur-[2px] bg-white/75 dark:bg-[#1E1C18]/85 rounded-xl md:rounded-2xl flex flex-col items-center justify-center p-6 text-center animate-fade-in">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#B87B22] to-[#D49838] text-white flex items-center justify-center mb-3.5 shadow-lg shadow-[#B87B22]/20">
+              <Lock className="w-7 h-7" />
+            </div>
+            <h3 className="text-xl font-serif font-bold text-[var(--color-text-primary)] mb-1">
+              خزينة اليوميات الخاصة
+            </h3>
+            <p className="text-xs text-[var(--color-text-muted)] max-w-sm mb-5 leading-relaxed font-text">
+              أنت تتصفح في نمط الزائر. لبدء كتابة تدويناتك وتوثيق مشاعرك وأفكارك اليومية وحفظها مشفرة بأمان، يرجى تسجيل الدخول أو إنشاء حساب جديد.
+            </p>
+            <button
+              type="button"
+              onClick={onRequireAuth}
+              className="px-6 py-2.5 rounded-xl font-bold bg-gradient-to-r from-[#B87B22] to-[#D49838] text-white hover:opacity-95 shadow-md shadow-[#B87B22]/20 text-xs transition-all hover:scale-105 active:scale-95 flex items-center gap-2"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>تسجيل الدخول / إنشاء حساب للبدء</span>
+            </button>
+          </div>
+        )}
+
         {inputMode === 'drawing' ? (
           <div className="flex-1 flex flex-col min-h-[380px] space-y-2">
             <StylusCanvas
@@ -289,6 +318,7 @@ export const BookPageRight: React.FC<BookPageRightProps> = ({
               ref={textareaRef}
               value={entry.content}
               onChange={handleContentChange}
+              readOnly={isVisitor}
               placeholder="اكتب هنا بحرية وسكينة... أفرغ خواطرك، تفاصيل يومك، وملاحظاتك الصغيرة دون استعجال..."
               style={{
                 fontSize: `${16 + fontSizeOffset}px`,

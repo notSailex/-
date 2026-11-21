@@ -70,7 +70,7 @@ interface LibraryViewProps {
 }
 
 export const LibraryView: React.FC<LibraryViewProps> = ({ user, onRequireAuth }) => {
-  const [books, setBooks] = useState<BookItem[]>(() => loadStoredBooks());
+  const [books, setBooks] = useState<BookItem[]>(() => (user && !user.isGuest ? loadStoredBooks() : []));
   const [featuredBooks, setFeaturedBooks] = useState<BookItem[]>(() => loadVisibleFeaturedBooks());
   const [activeFilter, setActiveFilter] = useState<FilterStatus>('all');
 
@@ -78,6 +78,26 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ user, onRequireAuth })
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingBookId, setEditingBookId] = useState<string | null>(null);
   const [selectedBookForDetails, setSelectedBookForDetails] = useState<BookItem | null>(null);
+
+  // Global wipe event listener
+  useEffect(() => {
+    const handleWipe = () => {
+      setBooks([]);
+      setSelectedBookForDetails(null);
+      setIsAddModalOpen(false);
+    };
+    window.addEventListener('trmez_wipe_user_data', handleWipe);
+    return () => window.removeEventListener('trmez_wipe_user_data', handleWipe);
+  }, []);
+
+  // Wipe on user becoming null/guest
+  useEffect(() => {
+    if (!user || user.isGuest) {
+      setBooks([]);
+      setSelectedBookForDetails(null);
+      setIsAddModalOpen(false);
+    }
+  }, [user]);
 
   // Helper: check if a book is from featured / admin recommendations
   const isFeaturedBook = (bookId?: string | null): boolean => {
@@ -109,7 +129,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ user, onRequireAuth })
 
   // Sync books from Supabase when user logs in - Supabase is single source of truth!
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id || user.isGuest) return;
     let isMounted = true;
     fetchUserBooks(user.id).then((remoteBooks) => {
       if (!isMounted) return;
@@ -129,12 +149,14 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ user, onRequireAuth })
     return () => {
       isMounted = false;
     };
-  }, [user?.id]);
+  }, [user?.id, user?.isGuest]);
 
   // Sync to localStorage
   const updateBooksList = (updated: BookItem[]) => {
     setBooks(updated);
-    saveStoredBooks(updated);
+    if (user && !user.isGuest) {
+      saveStoredBooks(updated);
+    }
   };
 
   // Filtered books
@@ -326,6 +348,23 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ user, onRequireAuth })
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-8 animate-fade-in pb-20 select-none">
+      {/* تنبيه الزائر */}
+      {(!user || user.isGuest) && (
+        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-medium">
+            <Lock className="w-4 h-4 shrink-0 text-amber-500" />
+            <span>أنت تتصفح كزائر الخزينة — سجّل دخولك لإضافة كتبك وتقييمها وحفظ رفوفك القرائية على السحابة</span>
+          </div>
+          <button
+            type="button"
+            onClick={onRequireAuth}
+            className="px-4 py-2 rounded-xl font-bold bg-[var(--color-accent-warm)] text-white hover:opacity-90 shrink-0 shadow-xs text-xs"
+          >
+            تسجيل الدخول / إنشاء حساب
+          </button>
+        </div>
+      )}
+
       {/* Header with Title and Add Button */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl bg-[var(--color-bg-surface)] dark:bg-[var(--color-bg-card)] border border-[var(--color-border-subtle)] shadow-subtle dark:shadow-subtle-dark">
         <div>

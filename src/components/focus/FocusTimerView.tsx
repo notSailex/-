@@ -5,9 +5,16 @@ import {
   loadStoredFocusSessions,
   saveStoredFocusSessions,
   loadStoredFocusSubjects,
-  saveStoredFocusSubjects
+  saveStoredFocusSubjects,
+  DEFAULT_FOCUS_SUBJECTS
 } from '../../lib/storage';
-import { fetchUserFocusSessions, saveUserFocusSession, deleteUserFocusSession } from '../../lib/supabaseService';
+import {
+  fetchUserFocusSessions,
+  saveUserFocusSession,
+  deleteUserFocusSession,
+  fetchUserFocusSubjects,
+  saveUserFocusSubjects
+} from '../../lib/supabaseService';
 import { getTodayISODate, toArabicNumerals } from '../../lib/utils';
 import confetti from 'canvas-confetti';
 import {
@@ -54,7 +61,7 @@ export const FocusTimerView: React.FC<FocusTimerViewProps> = ({ user, onRequireA
 
   // Session metadata
   const [selectedType, setSelectedType] = useState<FocusSessionType>('study');
-  const [subjects, setSubjects] = useState<string[]>(() => loadStoredFocusSubjects());
+  const [subjects, setSubjects] = useState<string[]>(() => (user && !user.isGuest ? loadStoredFocusSubjects() : DEFAULT_FOCUS_SUBJECTS));
   const [selectedSubject, setSelectedSubject] = useState<string>(() => subjects[0] || 'عام');
   const [newSubjectName, setNewSubjectName] = useState<string>('');
   const [isAddingSubject, setIsAddingSubject] = useState<boolean>(false);
@@ -64,16 +71,39 @@ export const FocusTimerView: React.FC<FocusTimerViewProps> = ({ user, onRequireA
 
   // Completed sessions for today
   const [todaySessions, setTodaySessions] = useState<FocusSession[]>(() => {
+    if (!user || user.isGuest) return [];
     const today = getTodayISODate();
     return loadStoredFocusSessions().filter(s => s.date === today);
   });
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Load user sessions from Supabase on mount / login - Supabase is the single source of truth!
+  // Global wipe event listener
   useEffect(() => {
-    if (!user?.id) return;
+    const handleWipe = () => {
+      setTodaySessions([]);
+      setSubjects(DEFAULT_FOCUS_SUBJECTS);
+      setSelectedSubject(DEFAULT_FOCUS_SUBJECTS[0] || 'عام');
+    };
+    window.addEventListener('trmez_wipe_user_data', handleWipe);
+    return () => window.removeEventListener('trmez_wipe_user_data', handleWipe);
+  }, []);
+
+  // Wipe on user becoming null/guest
+  useEffect(() => {
+    if (!user || user.isGuest) {
+      setTodaySessions([]);
+      setSubjects(DEFAULT_FOCUS_SUBJECTS);
+      setSelectedSubject(DEFAULT_FOCUS_SUBJECTS[0] || 'عام');
+    }
+  }, [user]);
+
+  // Load user sessions and custom subjects from Supabase on mount / login - Supabase is single source of truth!
+  useEffect(() => {
+    if (!user?.id || user.isGuest) return;
     let isMounted = true;
+
+    // Fetch sessions
     fetchUserFocusSessions(user.id).then((remoteSessions) => {
       if (!isMounted) return;
       const cleanSessions = (remoteSessions || []).filter(s =>
@@ -87,10 +117,21 @@ export const FocusTimerView: React.FC<FocusTimerViewProps> = ({ user, onRequireA
       const today = getTodayISODate();
       setTodaySessions(cleanSessions.filter(s => s.date === today));
     });
+
+    // Fetch subjects
+    fetchUserFocusSubjects(user.id).then((remoteSubjects) => {
+      if (!isMounted) return;
+      if (remoteSubjects && remoteSubjects.length > 0) {
+        setSubjects(remoteSubjects);
+        saveStoredFocusSubjects(remoteSubjects);
+        setSelectedSubject(prev => remoteSubjects.includes(prev) ? prev : remoteSubjects[0]);
+      }
+    });
+
     return () => {
       isMounted = false;
     };
-  }, [user?.id]);
+  }, [user?.id, user?.isGuest]);
 
   // Total seconds for current mode
   const currentTotalSeconds = (timerMode === 'work' ? workMinutes : breakMinutes) * 60;
@@ -159,12 +200,11 @@ export const FocusTimerView: React.FC<FocusTimerViewProps> = ({ user, onRequireA
         date: getTodayISODate(),
       };
 
-      const allSessions = loadStoredFocusSessions();
-      const updated = [newSession, ...allSessions];
-      saveStoredFocusSessions(updated);
-      setTodaySessions(prev => [newSession, ...prev]);
-
-      if (user?.id) {
+      if (user?.id && !user.isGuest) {
+        const allSessions = loadStoredFocusSessions();
+        const updated = [newSession, ...allSessions];
+        saveStoredFocusSessions(updated);
+        setTodaySessions(prev => [newSession, ...prev]);
         saveUserFocusSession(user.id, newSession);
       }
 
@@ -241,7 +281,11 @@ export const FocusTimerView: React.FC<FocusTimerViewProps> = ({ user, onRequireA
   };
 
   // Subject management
-  const handleAddSubject = () => {
+  const handleAddSubject = async () => {
+    if (!user || user.isGuest) {
+      onRequireAuth?.();
+      return;
+    }
     const trimmed = newSubjectName.trim();
     if (!trimmed || subjects.includes(trimmed)) return;
     const updated = [...subjects, trimmed];
@@ -250,16 +294,26 @@ export const FocusTimerView: React.FC<FocusTimerViewProps> = ({ user, onRequireA
     setSelectedSubject(trimmed);
     setNewSubjectName('');
     setIsAddingSubject(false);
+    if (user?.id) {
+      await saveUserFocusSubjects(user.id, updated);
+    }
   };
 
-  const handleDeleteSubject = (subjToDelete: string, e: React.MouseEvent) => {
+  const handleDeleteSubject = async (subjToDelete: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!user || user.isGuest) {
+      onRequireAuth?.();
+      return;
+    }
     if (subjects.length <= 1) return;
     const updated = subjects.filter(s => s !== subjToDelete);
     setSubjects(updated);
     saveStoredFocusSubjects(updated);
     if (selectedSubject === subjToDelete) {
       setSelectedSubject(updated[0] || 'عام');
+    }
+    if (user?.id) {
+      await saveUserFocusSubjects(user.id, updated);
     }
   };
 

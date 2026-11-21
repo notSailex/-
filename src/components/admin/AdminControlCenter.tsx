@@ -419,7 +419,7 @@ export const AdminControlCenter: React.FC<AdminControlCenterProps> = ({
                 </div>
                 <div className="flex justify-between py-1 border-b border-black/[0.03] dark:border-white/[0.03]">
                   <span>خوارزمية تشفير كلمات المرور:</span>
-                  <span className="text-[var(--color-text-primary)] font-mono">Bcrypt / Supabase Auth</span>
+                  <span className="text-[var(--color-text-primary)] font-mono">Bcrypt / تشفير أمني متقدم</span>
                 </div>
               </div>
             </div>
@@ -428,7 +428,7 @@ export const AdminControlCenter: React.FC<AdminControlCenterProps> = ({
               <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-[var(--color-border-subtle)]">
                 <div className="flex items-center gap-2">
                   <Activity className="w-5 h-5 text-amber-500" />
-                  <h4 className="text-sm font-bold text-[var(--color-text-primary)]">خادم قاعدة بيانات Supabase</h4>
+                  <h4 className="text-sm font-bold text-[var(--color-text-primary)]">خادم المزامنة وقاعدة البيانات السحابية</h4>
                 </div>
                 <button
                   type="button"

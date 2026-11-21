@@ -8,6 +8,25 @@ const STORAGE_KEY_FOCUS_SESSIONS = 'trmez_focus_sessions_v1';
 const STORAGE_KEY_FOCUS_SUBJECTS = 'trmez_focus_subjects_v1';
 const STORAGE_KEY_BOOKS = 'trmez_library_books_v1';
 
+export const DEFAULT_FOCUS_SUBJECTS = ['برمجة', 'قراءة حرة', 'رياضيات', 'لغات', 'كتابة وأدب', 'عام'];
+
+export function wipeAllUserData(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEY_ENTRIES);
+    localStorage.removeItem(STORAGE_KEY_NOTES);
+    localStorage.removeItem(STORAGE_KEY_FOCUS_SESSIONS);
+    localStorage.removeItem(STORAGE_KEY_FOCUS_SUBJECTS);
+    localStorage.removeItem(STORAGE_KEY_BOOKS);
+    localStorage.removeItem('trmez_dismissed_featured_books');
+    localStorage.removeItem('trmez_auth_user_v2');
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('trmez_wipe_user_data'));
+    }
+  } catch (err) {
+    console.error('Error wiping user data:', err);
+  }
+}
+
 export const DEFAULT_SETTINGS: AppSettings = {
   theme: 'dark',
   nightTheme: 'sand',
@@ -214,8 +233,6 @@ export function saveStoredNotes(notes: QuickNote[]) {
 // ----------------------------------------------------
 // تخزين جلسات التركيز والبومودورو والمواد
 // ----------------------------------------------------
-const DEFAULT_FOCUS_SUBJECTS = ['برمجة', 'قراءة حرة', 'رياضيات', 'لغات', 'كتابة وأدب', 'عام'];
-
 export function loadStoredFocusSessions(): FocusSession[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_FOCUS_SESSIONS);
