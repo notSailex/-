@@ -200,46 +200,54 @@ export const WISDOM_LIBRARY: WisdomItem[] = [
 // ----------------------------------------------------------------------------
 
 const STORAGE_KEY_WISDOM_INDEX = 'trmez_wisdom_active_index_v1';
+const STORAGE_KEY_GREETING_INDEX = 'trmez_greeting_active_index_v1';
 
 export function getDynamicGreeting(lang: 'ar' | 'en' = 'ar'): string {
-  // اختيار ترحيب أدبي جمالي رفيع يتغير بتلقائية وتناغم
-  const d = new Date();
-  const seed = (d.getDate() * 13 + d.getHours() * 7) % LITERARY_GREETINGS.length;
-  const item = LITERARY_GREETINGS[seed] || LITERARY_GREETINGS[0];
-  return lang === 'en' ? item.en : item.ar;
+  try {
+    const lastStored = sessionStorage.getItem(STORAGE_KEY_GREETING_INDEX);
+    const lastIdx = lastStored !== null ? parseInt(lastStored, 10) : -1;
+    let nextIdx = Math.floor(Math.random() * LITERARY_GREETINGS.length);
+    if (nextIdx === lastIdx && LITERARY_GREETINGS.length > 1) {
+      nextIdx = (nextIdx + 1) % LITERARY_GREETINGS.length;
+    }
+    sessionStorage.setItem(STORAGE_KEY_GREETING_INDEX, String(nextIdx));
+    const item = LITERARY_GREETINGS[nextIdx] || LITERARY_GREETINGS[0];
+    return lang === 'en' ? item.en : item.ar;
+  } catch {
+    const randomIdx = Math.floor(Math.random() * LITERARY_GREETINGS.length);
+    const item = LITERARY_GREETINGS[randomIdx] || LITERARY_GREETINGS[0];
+    return lang === 'en' ? item.en : item.ar;
+  }
 }
 
 export function getCurrentWisdom(): WisdomItem {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY_WISDOM_INDEX);
-    if (stored !== null) {
-      const idx = parseInt(stored, 10);
-      if (!isNaN(idx) && WISDOM_LIBRARY[idx]) {
-        return WISDOM_LIBRARY[idx];
-      }
+    const lastStored = sessionStorage.getItem(STORAGE_KEY_WISDOM_INDEX);
+    const lastIdx = lastStored !== null ? parseInt(lastStored, 10) : -1;
+    let nextIdx = Math.floor(Math.random() * WISDOM_LIBRARY.length);
+    if (nextIdx === lastIdx && WISDOM_LIBRARY.length > 1) {
+      nextIdx = (nextIdx + 1) % WISDOM_LIBRARY.length;
     }
+    sessionStorage.setItem(STORAGE_KEY_WISDOM_INDEX, String(nextIdx));
+    return WISDOM_LIBRARY[nextIdx] || WISDOM_LIBRARY[0];
   } catch {
-    // Ignore
+    const randomIdx = Math.floor(Math.random() * WISDOM_LIBRARY.length);
+    return WISDOM_LIBRARY[randomIdx] || WISDOM_LIBRARY[0];
   }
-
-  // إذا لم يكن مخزناً، نختار عنصراً بالاعتماد على اليوم في الشهر
-  const day = new Date().getDate();
-  const idx = day % WISDOM_LIBRARY.length;
-  return WISDOM_LIBRARY[idx];
 }
 
 export function cycleNextWisdom(): WisdomItem {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY_WISDOM_INDEX);
+    const stored = sessionStorage.getItem(STORAGE_KEY_WISDOM_INDEX);
     let nextIdx = 0;
     if (stored !== null) {
       const current = parseInt(stored, 10);
       nextIdx = (current + 1) % WISDOM_LIBRARY.length;
     } else {
-      nextIdx = 1 % WISDOM_LIBRARY.length;
+      nextIdx = Math.floor(Math.random() * WISDOM_LIBRARY.length);
     }
-    localStorage.setItem(STORAGE_KEY_WISDOM_INDEX, String(nextIdx));
-    return WISDOM_LIBRARY[nextIdx];
+    sessionStorage.setItem(STORAGE_KEY_WISDOM_INDEX, String(nextIdx));
+    return WISDOM_LIBRARY[nextIdx] || WISDOM_LIBRARY[0];
   } catch {
     return WISDOM_LIBRARY[0];
   }

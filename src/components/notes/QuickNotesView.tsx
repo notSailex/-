@@ -94,26 +94,26 @@ const NoteCalendarPicker: React.FC<NoteCalendarPickerProps> = ({
   }
 
   return (
-    <div className="p-3.5 rounded-2xl bg-[var(--color-bg-surface)] dark:bg-[var(--color-bg-card)] border border-amber-500/40 shadow-xl space-y-3 max-w-sm animate-fade-in select-none">
+    <div className="w-full max-w-md mx-auto p-4 rounded-2xl bg-[#FBF7F0] dark:bg-[#1C1A17] border border-amber-500/40 shadow-lg space-y-3.5 select-none animate-fade-in">
       {/* الترويسة والتنقل بين الشهور */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-1 border-b border-black/[0.06] dark:border-white/[0.06]">
         <button
           type="button"
           onClick={handleNextMonth}
-          className="p-1 rounded-lg hover:bg-black/[0.05] dark:hover:bg-white/[0.08] text-[var(--color-text-secondary)] transition-colors"
+          className="p-1.5 rounded-xl hover:bg-black/[0.05] dark:hover:bg-white/[0.08] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
           title="الشهر التالي"
         >
           <ChevronRight className="w-4 h-4" />
         </button>
 
-        <div className="text-xs font-bold font-display text-[var(--color-text-primary)]">
+        <div className="text-sm font-bold font-display text-[var(--color-text-primary)]">
           {ARABIC_MONTH_NAMES[viewMonth]} {toArabicNumerals(viewYear)}
         </div>
 
         <button
           type="button"
           onClick={handlePrevMonth}
-          className="p-1 rounded-lg hover:bg-black/[0.05] dark:hover:bg-white/[0.08] text-[var(--color-text-secondary)] transition-colors"
+          className="p-1.5 rounded-xl hover:bg-black/[0.05] dark:hover:bg-white/[0.08] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
           title="الشهر السابق"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -123,17 +123,17 @@ const NoteCalendarPicker: React.FC<NoteCalendarPickerProps> = ({
       {/* أسماء أيام الأسبوع */}
       <div className="grid grid-cols-7 gap-1 text-center">
         {WEEKDAY_SHORT.map(w => (
-          <span key={w} className="text-[10px] font-semibold text-[var(--color-text-muted)]">
+          <span key={w} className="text-[11px] font-semibold text-[var(--color-text-muted)] py-0.5">
             {w}
           </span>
         ))}
       </div>
 
-      {/* شبكة أيام الشهر التفاعلية */}
-      <div className="grid grid-cols-7 gap-1">
+      {/* شبكة أيام الشهر التفاعلية بمساحة مريحة ومتباعدة */}
+      <div className="grid grid-cols-7 gap-1.5 py-1">
         {days.map((dayNum, i) => {
           if (!dayNum) {
-            return <div key={`empty-${i}`} className="h-7 w-7" />;
+            return <div key={`empty-${i}`} className="h-8 w-8" />;
           }
           const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
           const isSelected = selectedDate === dateStr;
@@ -145,11 +145,11 @@ const NoteCalendarPicker: React.FC<NoteCalendarPickerProps> = ({
               type="button"
               onClick={() => onSelectDate(dateStr)}
               className={cn(
-                "h-7 w-7 mx-auto rounded-lg text-xs font-bold flex items-center justify-center transition-all",
+                "h-8 w-8 mx-auto rounded-xl text-xs font-bold flex items-center justify-center transition-all",
                 isSelected
-                  ? "bg-amber-500 text-black shadow-xs font-black ring-2 ring-amber-300 scale-105"
+                  ? "bg-amber-500 text-black shadow-md font-black ring-2 ring-amber-300 scale-105"
                   : isToday
-                  ? "bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40"
+                  ? "bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/50 font-bold"
                   : "text-[var(--color-text-primary)] hover:bg-black/[0.05] dark:hover:bg-white/[0.08]"
               )}
             >
@@ -159,18 +159,18 @@ const NoteCalendarPicker: React.FC<NoteCalendarPickerProps> = ({
         })}
       </div>
 
-      {/* شريط الإغلاق والتأكيد */}
-      <div className="flex items-center justify-between pt-2 border-t border-[var(--color-border-subtle)] text-[10px]">
-        <span className="text-amber-800 dark:text-amber-300 truncate font-mono">
-          {selectedDate ? `المحدد: ${selectedDate}` : 'اضغط على اليوم لتحديده'}
+      {/* شريط الإغلاق والتأكيد بمسافة واضحة ومستقلة */}
+      <div className="flex items-center justify-between pt-3 border-t border-black/[0.08] dark:border-white/[0.08] text-xs">
+        <span className="text-amber-800 dark:text-amber-300 truncate font-mono text-[11px]">
+          {selectedDate ? `المحدد: ${selectedDate}` : 'اضغط على أي يوم لاختياره'}
         </span>
         {onClose && (
           <button
             type="button"
             onClick={onClose}
-            className="px-2.5 py-1 rounded-md bg-amber-500 text-black font-bold hover:bg-amber-400 transition-colors"
+            className="px-3 py-1 rounded-xl bg-amber-500 text-black font-bold hover:bg-amber-400 transition-colors shadow-xs text-xs"
           >
-            تأكيد الاختيار
+            تأكيد
           </button>
         )}
       </div>
@@ -835,8 +835,8 @@ export const QuickNotesView: React.FC<QuickNotesViewProps> = ({ user, onRequireA
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {/* التاريخ مع إمكانية فتح التقويم البصري الشهري مباشرة */}
-                    <div className="relative">
+                    {/* التاريخ مع إمكانية فتح التقويم البصري الشهري */}
+                    <div>
                       <label className="text-[11px] font-semibold text-amber-800 dark:text-amber-300 block mb-1">
                         تاريخ التذكير (اضغط لفتح التقويم)
                       </label>
@@ -848,30 +848,13 @@ export const QuickNotesView: React.FC<QuickNotesViewProps> = ({ user, onRequireA
                         <div className="flex items-center gap-2 truncate">
                           <CalendarIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                           <span className="font-mono text-xs font-semibold">
-                            {activeNote.reminderDate || 'اضغط لاختيار اليوم من التقويم...'}
+                            {activeNote.reminderDate || 'اضغط لاختيار اليوم...'}
                           </span>
                         </div>
                         <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold shrink-0">
-                          {isCalendarPickerOpen ? 'إغلاق' : 'عرض التقويم 📅'}
+                          {isCalendarPickerOpen ? 'إغلاق ✕' : 'التقويم 📅'}
                         </span>
                       </button>
-
-                      {/* التقويم البصري التفاعلي المنبثق */}
-                      {isCalendarPickerOpen && (
-                        <div className="absolute top-full mt-2 right-0 z-50">
-                          <NoteCalendarPicker
-                            selectedDate={activeNote.reminderDate}
-                            onSelectDate={(pickedDate) => {
-                              handleUpdateActive({
-                                reminderDate: pickedDate,
-                                reminderFrequency: activeNote.reminderFrequency || 'once',
-                              });
-                              setIsCalendarPickerOpen(false);
-                            }}
-                            onClose={() => setIsCalendarPickerOpen(false)}
-                          />
-                        </div>
-                      )}
                     </div>
 
                     {/* الوقت (اختياري) */}
@@ -905,6 +888,23 @@ export const QuickNotesView: React.FC<QuickNotesViewProps> = ({ user, onRequireA
                       </select>
                     </div>
                   </div>
+
+                  {/* التقويم البصري التفاعلي يفتح هنا ضمن تسلسل الصفحة بشكل طبيعي دون أن يغطي أو يتداخل مع أي نص */}
+                  {isCalendarPickerOpen && (
+                    <div className="pt-2 animate-fade-in">
+                      <NoteCalendarPicker
+                        selectedDate={activeNote.reminderDate}
+                        onSelectDate={(pickedDate) => {
+                          handleUpdateActive({
+                            reminderDate: pickedDate,
+                            reminderFrequency: activeNote.reminderFrequency || 'once',
+                          });
+                          setIsCalendarPickerOpen(false);
+                        }}
+                        onClose={() => setIsCalendarPickerOpen(false)}
+                      />
+                    </div>
+                  )}
 
                   {/* اختصارات سريعة */}
                   <div className="flex items-center gap-2 pt-1 overflow-x-auto text-xs">

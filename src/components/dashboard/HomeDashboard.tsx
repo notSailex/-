@@ -62,10 +62,10 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
   const todayEntry = entries[todayISO];
   const hasTodayEntry = todayEntry && todayEntry.content.trim().length > 0;
 
-  // Dynamic greeting that rotates by time-of-day & day
-  const greeting = getDynamicGreeting(lang);
+  // Dynamic literary greeting that updates fresh on every mount / refresh
+  const [greeting, setGreeting] = useState(() => getDynamicGreeting(lang));
 
-  // Rotating wisdom / lexicon / literary / spiritual pearls
+  // Rotating wisdom / lexicon / literary / spiritual pearls that update fresh on every mount / refresh
   const [wisdom, setWisdom] = useState<WisdomItem>(() => getCurrentWisdom());
   const [isRotating, setIsRotating] = useState(false);
 
@@ -73,6 +73,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
     setIsRotating(true);
     const next = cycleNextWisdom();
     setWisdom(next);
+    setGreeting(getDynamicGreeting(lang));
     setTimeout(() => setIsRotating(false), 300);
   };
 

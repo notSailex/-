@@ -1,4 +1,5 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { JournalEntry, AppSettings } from '../../types/journal';
 import { cn, toArabicNumerals, formatWordsCount, compressImage } from '../../lib/utils';
 import confetti from 'canvas-confetti';
@@ -43,6 +44,25 @@ export const BookPageRight: React.FC<BookPageRightProps> = ({
   const [inputMode, setInputMode] = useState<'text' | 'drawing'>('text');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isCompressingImage, setIsCompressingImage] = useState(false);
+
+  // Lock body scroll & listen for Escape key in Journal Zen writing mode
+  useEffect(() => {
+    if (!isZenMode) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsZenMode(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isZenMode]);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -131,7 +151,6 @@ export const BookPageRight: React.FC<BookPageRightProps> = ({
   return (
     <div className={cn(
       "flex flex-col h-full p-4 sm:p-6 lg:p-8 transition-all duration-300 overflow-hidden relative",
-      isZenMode && "fixed inset-0 z-50 bg-[#FAF8F5] dark:bg-[var(--color-bg-base)] max-w-4xl mx-auto shadow-2xl p-6 md:p-12",
       settings.paperRuling === 'lined' && "paper-lined",
       settings.paperRuling === 'dotted' && "paper-dotted"
     )}>
@@ -437,17 +456,111 @@ export const BookPageRight: React.FC<BookPageRightProps> = ({
         </div>
       )}
 
-      {/* Zen Mode Exit helper button */}
-      {isZenMode && (
-        <div className="pt-4 flex justify-end">
-          <button
-            type="button"
-            onClick={() => setIsZenMode(false)}
-            className="px-4 py-2 rounded-xl text-xs font-medium bg-[#1D1A16] text-[#F3EFE6] dark:bg-[#F3EFE6] dark:text-[#1D1A16] shadow-lg"
-          >
-            إغلاق وضع التركيز (Esc)
-          </button>
-        </div>
+      {/* Fullscreen Zen Writing Sanctuary Portal (خلوة الكتابة والتدوين الكاملة) */}
+      {isZenMode && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-[99999] w-screen h-screen bg-[#FBF9F5] dark:bg-[#0E100F] text-[#1D1A16] dark:text-[#F3EFE6] flex flex-col justify-between p-4 sm:p-8 select-none overflow-y-auto animate-fade-in"
+          style={{ direction: 'rtl' }}
+        >
+          {/* Top Header in Zen Sanctuary */}
+          <div className="w-full max-w-4xl mx-auto flex items-center justify-between gap-3 pb-3 border-b border-black/[0.08] dark:border-white/[0.08] shrink-0">
+            <div className="flex items-center gap-2.5">
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-xs sm:text-sm font-display font-bold text-[#5C5549] dark:text-[#C5BFB5]">
+                خلوة التدوين والكتابة الهادئة • بدون مشتتات
+              </span>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {/* Save Status */}
+              <div className="flex items-center gap-1.5 text-xs text-[#7E786E] dark:text-[#9E9689]">
+                {saveStatus === 'saving' ? (
+                  <>
+                    <span className="w-2 h-2 rounded-full bg-[#E09F3E] animate-pulse" />
+                    <span className="hidden sm:inline">جاري الحفظ...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-[11px] hidden sm:inline">محفوظ بهدوء</span>
+                  </>
+                )}
+              </div>
+
+              {/* Word Count */}
+              <div className="flex items-center gap-1 text-xs text-[#5C5549] dark:text-[#A8A196]">
+                <Feather className="w-3.5 h-3.5 text-[#E09F3E]" />
+                <span>{formatWordsCount(entry.wordCount)}</span>
+              </div>
+
+              {/* Font Size Toggle */}
+              <button
+                type="button"
+                onClick={() => setFontSizeOffset(prev => (prev >= 6 ? -2 : prev + 2))}
+                className="p-1.5 rounded-xl hover:bg-black/[0.05] dark:hover:bg-white/[0.08] text-[#7E786E] dark:text-[#9E9689] transition-colors"
+                title="تغيير حجم الخط"
+              >
+                <Type className="w-4 h-4" />
+              </button>
+
+              {/* Exit Zen Button */}
+              <button
+                type="button"
+                onClick={() => setIsZenMode(false)}
+                className="flex items-center gap-2 px-3.5 py-1.5 rounded-2xl bg-black/[0.07] dark:bg-white/10 hover:bg-black/[0.12] dark:hover:bg-white/20 text-[#1D1A16] dark:text-white text-xs font-semibold transition-all hover:scale-105 active:scale-95 shadow-xs"
+                title="الخروج من الخلوة أو اضغط Esc"
+              >
+                <Minimize2 className="w-4 h-4" />
+                <span>الخروج من الخلوة (Esc)</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Center Writing Canvas */}
+          <div className="w-full max-w-3xl mx-auto flex-1 flex flex-col my-auto py-6 space-y-4">
+            <input
+              type="text"
+              value={entry.title}
+              onChange={handleTitleChange}
+              placeholder="عنوان الخاطرة أو التدوينة..."
+              className="w-full text-2xl sm:text-3xl md:text-4xl font-display font-bold bg-transparent border-b border-black/[0.08] dark:border-white/[0.08] pb-3 text-[var(--color-text-primary)] focus:outline-none placeholder:text-black/30 dark:placeholder:text-white/30"
+              dir="rtl"
+            />
+
+            <textarea
+              ref={textareaRef}
+              value={entry.content}
+              onChange={handleContentChange}
+              placeholder="اسكب مشاعرك وأفكارك هنا بحرية تامة... كل حرف يُحفظ تلقائياً..."
+              className={cn(
+                "w-full flex-1 min-h-[55vh] bg-transparent resize-none focus:outline-none text-base sm:text-lg md:text-xl text-[var(--color-text-primary)] placeholder:text-black/30 dark:placeholder:text-white/30",
+                settings.paperRuling === 'lined' && "paper-lined",
+                settings.paperRuling === 'dotted' && "paper-dotted"
+              )}
+              style={{
+                fontSize: `${18 + fontSizeOffset}px`,
+                lineHeight: 2.2,
+              }}
+              dir="rtl"
+              autoFocus
+            />
+          </div>
+
+          {/* Bottom Footer */}
+          <div className="w-full max-w-3xl mx-auto flex items-center justify-between text-xs text-[#7E786E] dark:text-[#9E9689] pt-3 border-t border-black/[0.06] dark:border-white/[0.06] shrink-0">
+            <span>انقر Esc أو زر الخروج للعودة إلى صفحات الدفتر</span>
+            <button
+              type="button"
+              onClick={insertTimestamp}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-black/[0.05] dark:hover:bg-white/[0.08] transition-colors"
+              title="إدراج الوقت الحالي"
+            >
+              <Clock className="w-3.5 h-3.5" />
+              <span>إدراج الوقت</span>
+            </button>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );
