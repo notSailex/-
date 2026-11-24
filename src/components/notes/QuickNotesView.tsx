@@ -24,7 +24,8 @@ import {
   CheckCircle2,
   AlertCircle,
   Repeat,
-  X
+  X,
+  ChevronLeft
 } from 'lucide-react';
 import { cn, toArabicNumerals, formatWordsCount, getTodayISODate } from '../../lib/utils';
 import { StylusCanvas } from '../common/StylusCanvas';
@@ -37,6 +38,144 @@ const FREQUENCY_LABELS: Record<ReminderFrequency, string> = {
   weekly: 'أسبوعياً',
   monthly: 'شهرياً',
   yearly: 'سنوياً',
+};
+
+const ARABIC_MONTH_NAMES = [
+  'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+  'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+];
+
+const WEEKDAY_SHORT = ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'];
+
+interface NoteCalendarPickerProps {
+  selectedDate?: string;
+  onSelectDate: (date: string) => void;
+  onClose?: () => void;
+}
+
+const NoteCalendarPicker: React.FC<NoteCalendarPickerProps> = ({
+  selectedDate,
+  onSelectDate,
+  onClose,
+}) => {
+  const initialDate = selectedDate ? new Date(selectedDate) : new Date();
+  const [viewYear, setViewYear] = useState(initialDate.getFullYear());
+  const [viewMonth, setViewMonth] = useState(initialDate.getMonth()); // 0-indexed
+
+  const todayStr = getTodayISODate();
+
+  const handlePrevMonth = () => {
+    if (viewMonth === 0) {
+      setViewMonth(11);
+      setViewYear(prev => prev - 1);
+    } else {
+      setViewMonth(prev => prev - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (viewMonth === 11) {
+      setViewMonth(0);
+      setViewYear(prev => prev + 1);
+    } else {
+      setViewMonth(prev => prev + 1);
+    }
+  };
+
+  const firstDayOfWeek = new Date(viewYear, viewMonth, 1).getDay(); // 0 is Sunday
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+  const days: (number | null)[] = [];
+  for (let i = 0; i < firstDayOfWeek; i++) {
+    days.push(null);
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    days.push(d);
+  }
+
+  return (
+    <div className="p-3.5 rounded-2xl bg-[var(--color-bg-surface)] dark:bg-[var(--color-bg-card)] border border-amber-500/40 shadow-xl space-y-3 max-w-sm animate-fade-in select-none">
+      {/* الترويسة والتنقل بين الشهور */}
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={handleNextMonth}
+          className="p-1 rounded-lg hover:bg-black/[0.05] dark:hover:bg-white/[0.08] text-[var(--color-text-secondary)] transition-colors"
+          title="الشهر التالي"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+
+        <div className="text-xs font-bold font-display text-[var(--color-text-primary)]">
+          {ARABIC_MONTH_NAMES[viewMonth]} {toArabicNumerals(viewYear)}
+        </div>
+
+        <button
+          type="button"
+          onClick={handlePrevMonth}
+          className="p-1 rounded-lg hover:bg-black/[0.05] dark:hover:bg-white/[0.08] text-[var(--color-text-secondary)] transition-colors"
+          title="الشهر السابق"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* أسماء أيام الأسبوع */}
+      <div className="grid grid-cols-7 gap-1 text-center">
+        {WEEKDAY_SHORT.map(w => (
+          <span key={w} className="text-[10px] font-semibold text-[var(--color-text-muted)]">
+            {w}
+          </span>
+        ))}
+      </div>
+
+      {/* شبكة أيام الشهر التفاعلية */}
+      <div className="grid grid-cols-7 gap-1">
+        {days.map((dayNum, i) => {
+          if (!dayNum) {
+            return <div key={`empty-${i}`} className="h-7 w-7" />;
+          }
+          const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+          const isSelected = selectedDate === dateStr;
+          const isToday = todayStr === dateStr;
+
+          return (
+            <button
+              key={dateStr}
+              type="button"
+              onClick={() => onSelectDate(dateStr)}
+              className={cn(
+                "h-7 w-7 mx-auto rounded-lg text-xs font-bold flex items-center justify-center transition-all",
+                isSelected
+                  ? "bg-amber-500 text-black shadow-xs font-black ring-2 ring-amber-300 scale-105"
+                  : isToday
+                  ? "bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40"
+                  : "text-[var(--color-text-primary)] hover:bg-black/[0.05] dark:hover:bg-white/[0.08]"
+              )}
+            >
+              {toArabicNumerals(dayNum)}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* شريط الإغلاق والتأكيد */}
+      <div className="flex items-center justify-between pt-2 border-t border-[var(--color-border-subtle)] text-[10px]">
+        <span className="text-amber-800 dark:text-amber-300 truncate font-mono">
+          {selectedDate ? `المحدد: ${selectedDate}` : 'اضغط على اليوم لتحديده'}
+        </span>
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-2.5 py-1 rounded-md bg-amber-500 text-black font-bold hover:bg-amber-400 transition-colors"
+          >
+            تأكيد الاختيار
+          </button>
+        )}
+      </div>
+    </div>
+  );
 };
 
 interface QuickNotesViewProps {
@@ -53,6 +192,7 @@ export const QuickNotesView: React.FC<QuickNotesViewProps> = ({ user, onRequireA
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving'>('saved');
   const [isReminderOpen, setIsReminderOpen] = useState(false);
+  const [isCalendarPickerOpen, setIsCalendarPickerOpen] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Global wipe event listener
@@ -695,17 +835,43 @@ export const QuickNotesView: React.FC<QuickNotesViewProps> = ({ user, onRequireA
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {/* التاريخ */}
-                    <div>
+                    {/* التاريخ مع إمكانية فتح التقويم البصري الشهري مباشرة */}
+                    <div className="relative">
                       <label className="text-[11px] font-semibold text-amber-800 dark:text-amber-300 block mb-1">
-                        تاريخ التذكير (محدد)
+                        تاريخ التذكير (اضغط لفتح التقويم)
                       </label>
-                      <input
-                        type="date"
-                        value={activeNote.reminderDate || ''}
-                        onChange={(e) => handleUpdateActive({ reminderDate: e.target.value, reminderFrequency: activeNote.reminderFrequency || 'once' })}
-                        className="w-full text-xs px-3 py-2 rounded-xl bg-[var(--color-bg-surface)] dark:bg-[var(--color-bg-card)] border border-amber-500/30 text-[var(--color-text-primary)] focus:outline-none focus:ring-1 focus:ring-amber-500"
-                      />
+                      <button
+                        type="button"
+                        onClick={() => setIsCalendarPickerOpen(prev => !prev)}
+                        className="w-full flex items-center justify-between text-xs px-3 py-2 rounded-xl bg-[var(--color-bg-surface)] dark:bg-[var(--color-bg-card)] border border-amber-500/35 text-[var(--color-text-primary)] hover:border-amber-500 transition-colors shadow-xs"
+                      >
+                        <div className="flex items-center gap-2 truncate">
+                          <CalendarIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                          <span className="font-mono text-xs font-semibold">
+                            {activeNote.reminderDate || 'اضغط لاختيار اليوم من التقويم...'}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold shrink-0">
+                          {isCalendarPickerOpen ? 'إغلاق' : 'عرض التقويم 📅'}
+                        </span>
+                      </button>
+
+                      {/* التقويم البصري التفاعلي المنبثق */}
+                      {isCalendarPickerOpen && (
+                        <div className="absolute top-full mt-2 right-0 z-50">
+                          <NoteCalendarPicker
+                            selectedDate={activeNote.reminderDate}
+                            onSelectDate={(pickedDate) => {
+                              handleUpdateActive({
+                                reminderDate: pickedDate,
+                                reminderFrequency: activeNote.reminderFrequency || 'once',
+                              });
+                              setIsCalendarPickerOpen(false);
+                            }}
+                            onClose={() => setIsCalendarPickerOpen(false)}
+                          />
+                        </div>
+                      )}
                     </div>
 
                     {/* الوقت (اختياري) */}
@@ -743,6 +909,14 @@ export const QuickNotesView: React.FC<QuickNotesViewProps> = ({ user, onRequireA
                   {/* اختصارات سريعة */}
                   <div className="flex items-center gap-2 pt-1 overflow-x-auto text-xs">
                     <span className="text-[10px] text-amber-700 dark:text-amber-400 font-semibold shrink-0">اختيار سريع:</span>
+                    <button
+                      type="button"
+                      onClick={() => setIsCalendarPickerOpen(prev => !prev)}
+                      className="px-2.5 py-1 rounded-lg bg-amber-500/25 hover:bg-amber-500/35 text-amber-950 dark:text-amber-100 text-[11px] font-bold transition-colors flex items-center gap-1 shrink-0"
+                    >
+                      <CalendarIcon className="w-3 h-3 text-amber-600 dark:text-amber-300" />
+                      <span>عرض التقويم الشهري 📅</span>
+                    </button>
                     <button
                       type="button"
                       onClick={() => {

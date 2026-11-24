@@ -277,11 +277,13 @@ export const Calendar: React.FC<CalendarProps> = ({
                     "h-16 md:h-20 border",
                     isSelected
                       ? "bg-[#FAF5EC] dark:bg-[var(--color-active-card)] border-[1.5px] border-[var(--color-active-border)] shadow-xs ring-1 ring-[var(--color-active-border)]/20 z-10 scale-[1.01]"
+                      : dayReminders.length > 0
+                      ? "bg-amber-500/[0.04] dark:bg-amber-500/[0.07] border-amber-500/40 shadow-[0_0_12px_rgba(245,158,11,0.12)] hover:border-amber-500/70 hover:scale-[1.02] z-0"
                       : "bg-black/[0.015] dark:bg-[var(--color-bg-surface)] border-black/[0.05] dark:border-[var(--color-border-subtle)] hover:bg-black/[0.035] dark:hover:bg-[var(--color-active-card)]/50 hover:border-black/[0.12] dark:hover:border-[var(--color-border-subtle)] hover:scale-[1.02] z-0",
                     isToday && !isSelected && "border-[var(--color-active-border)]/60 ring-1 ring-[var(--color-active-border)]/20"
                   )}
                 >
-                  {/* الصف العلوي: مخصص للتاريخين فقط مع جرس صغير ناعم عند وجود تذكير */}
+                  {/* الصف العلوي: مخصص للتاريخين مع شعار بارز ومميز للمواعيد المهمة */}
                   <div className="flex items-baseline justify-between w-full">
                     <div className="flex items-baseline gap-1 truncate">
                       <span className={cn(
@@ -301,13 +303,13 @@ export const Calendar: React.FC<CalendarProps> = ({
                       )}
                     </div>
 
-                    {/* علامة صغيرة وناعمة للتذكير المجدول حتى لا تزاحم التقويم */}
+                    {/* شعار مميز وبارز بلون مشرق للمواعيد والتذكيرات المهمة */}
                     {dayReminders.length > 0 && (
                       <span
-                        className="flex items-center text-amber-500 animate-pulse shrink-0"
-                        title={`تذكير ملاحظة: ${dayReminders.map(n => n.title || 'مذكرة').join(' • ')}`}
+                        className="flex items-center justify-center w-5 h-5 rounded-full bg-gradient-to-tr from-amber-600 via-amber-500 to-amber-400 text-white shadow-xs shadow-amber-500/40 ring-2 ring-amber-300/60 dark:ring-amber-500/40 shrink-0 transform transition-transform group-hover:scale-115"
+                        title={`موعد وتذكير مهم: ${dayReminders.map(n => n.title || 'ملاحظة بدون عنوان').join(' • ')}`}
                       >
-                        <Bell className="w-2.5 h-2.5 fill-current" />
+                        <Bell className="w-2.5 h-2.5 fill-white text-white drop-shadow-xs" />
                       </span>
                     )}
                   </div>

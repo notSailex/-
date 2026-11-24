@@ -15,31 +15,24 @@ export interface GreetingItem {
 }
 
 // ----------------------------------------------------------------------------
-// 1. باقة الترحيبات اليومية المتغيرة حسب الوقت والمزاج
+// 1. باقة التحايا الأدبية والجمالية الخالدة (غير مرتبطة بوقت صباح/مساء)
 // ----------------------------------------------------------------------------
-export const DYNAMIC_GREETINGS: Record<'morning' | 'afternoon' | 'evening', GreetingItem[]> = {
-  morning: [
-    { ar: 'صباحٌ عامرٌ بالسكينة ونور الإيمان', en: 'A morning filled with peace and radiant light' },
-    { ar: 'أشرق يومك بالبركة والهمة العالية', en: 'May your day dawn with blessings and high spirits' },
-    { ar: 'طاب صباحك برضوان الله وطمأنينة القلب', en: 'Good morning with tranquility and heartful grace' },
-    { ar: 'صباح البدايات المتجددة والأفكار الصافية', en: 'A morning of fresh beginnings and clear thoughts' },
-    { ar: 'أهلاً بك في ملاذك الهادئ مع إشراقة الفجر', en: 'Welcome to your tranquil sanctuary at dawn' },
-  ],
-  afternoon: [
-    { ar: 'طاب يومك بكل يمن وتوفيق وبركة', en: 'Wishing you a day full of success and grace' },
-    { ar: 'مسيرة يوم مكللة بالإنجاز والصفاء', en: 'A journey of day crowned with progress and serenity' },
-    { ar: 'أهلاً بك مجدداً بين ثنايا أفكارك', en: 'Welcome back among the quiet folds of your thoughts' },
-    { ar: 'بارك الله في ساعاتك وجهدك الطيب', en: 'May your hours and earnest endeavors be blessed' },
-    { ar: 'واحة من الهدوء في خضم وتيرة النهار', en: 'An oasis of calm in the steady rhythm of the day' },
-  ],
-  evening: [
-    { ar: 'مساء الهدوء وتأملات الفكر الرصين', en: 'An evening of calm and quiet introspection' },
-    { ar: 'طابت ليلتك بالسكينة وراحة البال', en: 'Wishing you a night of peace and ease of mind' },
-    { ar: 'مساء قطاف الأيام وخلوة النفس الحالمة', en: 'An evening of harvest and contemplative retreat' },
-    { ar: 'سلامٌ على روحك في سكون هذا المساء', en: 'Peace upon your soul in the calm of this evening' },
-    { ar: 'أهلاً بك في خلوة المساء مع قلمك ودفترك', en: 'Welcome to your evening solitude with pen and book' },
-  ],
-};
+export const LITERARY_GREETINGS: GreetingItem[] = [
+  { ar: 'مرحباً بك في مرافئ الفكر وسكينة التدوين', en: 'Welcome to the sanctuary of thought and mindful writing' },
+  { ar: 'طبتَ وطاب ممشاك في رياض الكلمات والمعاني', en: 'May peace accompany your steps in the gardens of words' },
+  { ar: 'أهلاً برفيق الحرف في خلوة التأمل الهادئ', en: 'Welcome, companion of letters, to your quiet retreat' },
+  { ar: 'سلامٌ على فكرك وروحك بين طيات الورق', en: 'Peace upon your soul and mind among these contemplative pages' },
+  { ar: 'مرحباً بك في أفياء البيان وبهاء الخواطر', en: 'Welcome beneath the sheltering shades of eloquence' },
+  { ar: 'أهلاً بك في محراب القلم وسكون المعرفة', en: 'Welcome to the sanctuary of the pen and serene knowledge' },
+  { ar: 'طابت أوقاتك في رحاب الحكمة وصفاء النفس', en: 'May your moments flourish in the realm of wisdom and serenity' },
+  { ar: 'مرحباً بك حيث تسكن الأفكار وتزهر السطور', en: 'Welcome where thoughts find solace and lines blossom' },
+  { ar: 'أهلاً بحديث الروح حين يُسكب مداداً وفكراً', en: 'Welcome to the soul’s discourse as it pours into ink and thought' },
+  { ar: 'سلامٌ على رفيق الخلوة وصانع الأثر النبيل', en: 'Peace upon the seeker of stillness and the crafter of enduring meaning' },
+  { ar: 'أهلاً بك في واحة الهدوء وفسحة البيان', en: 'Welcome to the oasis of tranquility and expansive expression' },
+  { ar: 'طابت خلوتك مع أفكارك الصافية وقلمك', en: 'May your quiet solitude with pure thoughts and pen be blessed' },
+];
+
+export const DYNAMIC_GREETINGS = LITERARY_GREETINGS;
 
 // ----------------------------------------------------------------------------
 // 2. مكتبة المعجم اللغوي والأدب والدين (تتغير تلقائياً مع كل تسجيل دخول/يوم)
@@ -209,15 +202,10 @@ export const WISDOM_LIBRARY: WisdomItem[] = [
 const STORAGE_KEY_WISDOM_INDEX = 'trmez_wisdom_active_index_v1';
 
 export function getDynamicGreeting(lang: 'ar' | 'en' = 'ar'): string {
-  const hour = new Date().getHours();
-  const timeSlot: 'morning' | 'afternoon' | 'evening' =
-    hour >= 4 && hour < 12 ? 'morning' : hour >= 12 && hour < 17 ? 'afternoon' : 'evening';
-
-  const list = DYNAMIC_GREETINGS[timeSlot];
-  // اختيار ترحيب بناءً على اليوم والدقيقة لتجدده تلقائياً
+  // اختيار ترحيب أدبي جمالي رفيع يتغير بتلقائية وتناغم
   const d = new Date();
-  const seed = (d.getDate() * 31 + d.getHours()) % list.length;
-  const item = list[seed] || list[0];
+  const seed = (d.getDate() * 13 + d.getHours() * 7) % LITERARY_GREETINGS.length;
+  const item = LITERARY_GREETINGS[seed] || LITERARY_GREETINGS[0];
   return lang === 'en' ? item.en : item.ar;
 }
 
