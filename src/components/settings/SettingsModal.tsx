@@ -215,6 +215,85 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
           </div>
 
+          {/* Global Font Size (حجم الخط لراحة القراءة وكبار السن) */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <label className="text-xs font-semibold uppercase tracking-wider text-[#7E786E] dark:text-[#8C8476] flex items-center gap-1.5">
+                <Type className="w-3.5 h-3.5 text-[#E09F3E]" />
+                <span>حجم خط الموقع والواجهة (Font Size)</span>
+              </label>
+              <span className="text-[10px] text-[#E09F3E] font-medium">
+                مريح لكبار السن وضعاف النظر
+              </span>
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { id: 'sm', label: 'صغير', desc: '14px' },
+                { id: 'base', label: 'قياسي', desc: '16px' },
+                { id: 'lg', label: 'كبير', desc: '18px' },
+                { id: 'xl', label: 'كبير جداً', desc: '20px' },
+              ].map(({ id, label, desc }) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => onUpdateSettings({ fontSize: id as AppSettings['fontSize'] })}
+                  className={cn(
+                    "flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition-all",
+                    settings.fontSize === id
+                      ? "border-[#E09F3E] bg-[#E09F3E]/10 text-[#E09F3E] font-bold ring-2 ring-[#E09F3E]/30 shadow-xs"
+                      : "border-black/[0.08] dark:border-[var(--color-border-subtle)] text-[#5C5549] dark:text-[#A8A196] hover:bg-black/[0.02]"
+                  )}
+                >
+                  <span className="text-xs font-bold">{label}</span>
+                  <span className="text-[10px] opacity-70 font-mono">{desc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Language Switcher (لغة الموقع: العربية / English) */}
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-wider text-[#7E786E] dark:text-[#8C8476] flex items-center gap-1.5 mb-3">
+              <Globe className="w-3.5 h-3.5 text-[#E09F3E]" />
+              <span>لغة الموقع (Language)</span>
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => onUpdateSettings({ language: 'ar' })}
+                className={cn(
+                  "flex items-center justify-between p-3 rounded-xl border text-start transition-all",
+                  settings.language !== 'en'
+                    ? "border-[#E09F3E] bg-[#E09F3E]/10 ring-2 ring-[#E09F3E]/30 text-[#E09F3E] font-bold"
+                    : "border-black/[0.08] dark:border-[var(--color-border-subtle)] hover:bg-black/[0.02] text-[#5C5549] dark:text-[#A8A196]"
+                )}
+              >
+                <div>
+                  <div className="text-xs font-bold">العربية (الافتراضية)</div>
+                  <div className="text-[10px] opacity-70">واجهة كاملة من اليمين لليسار</div>
+                </div>
+                {settings.language !== 'en' && <Check className="w-4 h-4 text-[#E09F3E]" />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onUpdateSettings({ language: 'en' })}
+                className={cn(
+                  "flex items-center justify-between p-3 rounded-xl border text-start transition-all",
+                  settings.language === 'en'
+                    ? "border-[#E09F3E] bg-[#E09F3E]/10 ring-2 ring-[#E09F3E]/30 text-[#E09F3E] font-bold"
+                    : "border-black/[0.08] dark:border-[var(--color-border-subtle)] hover:bg-black/[0.02] text-[#5C5549] dark:text-[#A8A196]"
+                )}
+              >
+                <div>
+                  <div className="text-xs font-bold font-sans">English</div>
+                  <div className="text-[10px] opacity-70 font-sans">Left-to-Right Interface</div>
+                </div>
+                {settings.language === 'en' && <Check className="w-4 h-4 text-[#E09F3E]" />}
+              </button>
+            </div>
+          </div>
+
           {/* 3. Paper Ruling Style */}
           <div>
             <label className="text-xs font-semibold uppercase tracking-wider text-[#7E786E] dark:text-[#8C8476] block mb-3">

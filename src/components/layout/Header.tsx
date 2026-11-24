@@ -1,6 +1,7 @@
 import React from 'react';
 import { ActiveTab } from '../mobile/MobileBottomNav';
 import { UserProfile, AppSettings } from '../../types/journal';
+import { Language } from '../../lib/i18n';
 import {
   Moon,
   Sun,
@@ -26,15 +27,27 @@ interface HeaderProps {
   onToggleCustomization: () => void;
 }
 
-const TAB_TITLES: Record<ActiveTab, string> = {
-  home: 'الرئيسية والتقويم',
-  journal: 'كتاب اليوميات',
-  notes: 'الملاحظات السريعة',
-  library: 'مكتبتي الأدبية',
-  focus: 'جلسات التركيز',
-  stats: 'لوحة الإحصاءات والنبض',
-  profile: 'الإعدادات وتخصيص الخزينة',
-  admin: 'مركز إدارة النظام (VIP)',
+const TAB_TITLES: Record<Language, Record<ActiveTab, string>> = {
+  ar: {
+    home: 'الرئيسية والتقويم',
+    journal: 'كتاب اليوميات',
+    notes: 'الملاحظات السريعة',
+    library: 'مكتبتي الأدبية',
+    focus: 'جلسات التركيز',
+    stats: 'لوحة الإحصاءات والنبض',
+    profile: 'الإعدادات وتخصيص الخزينة',
+    admin: 'مركز إدارة النظام (VIP)',
+  },
+  en: {
+    home: 'Home & Calendar',
+    journal: 'Daily Journal',
+    notes: 'Quick Notes',
+    library: 'My Library',
+    focus: 'Focus Sanctuary',
+    stats: 'Stats & Pulse',
+    profile: 'Vault Settings',
+    admin: 'Admin Center (VIP)',
+  },
 };
 
 export const Header: React.FC<HeaderProps> = ({
@@ -73,10 +86,10 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Desktop View: 18px Tab Title + 12px Subtitle with tight leading */}
         <div className="hidden lg:flex flex-col justify-center">
           <h2 className="text-[18px] font-display font-bold text-[var(--color-text-primary)] leading-tight">
-            {TAB_TITLES[activeTab]}
+            {TAB_TITLES[settings.language || 'ar']?.[activeTab] || TAB_TITLES.ar[activeTab]}
           </h2>
           <p className="text-[12px] text-[var(--color-text-muted)] leading-tight mt-0.5">
-            كتابة هادئة • تباين فائق • مزامنة سريعة
+            {settings.language === 'en' ? 'Calm Writing • High Contrast • Instant Cloud Sync' : 'كتابة هادئة • تباين فائق • مزامنة سريعة'}
           </p>
         </div>
       </div>
@@ -93,10 +106,10 @@ export const Header: React.FC<HeaderProps> = ({
               ? "bg-[var(--color-active-card)] text-[var(--color-accent-warm)] border-[var(--color-active-border)] shadow-[0_0_12px_var(--color-accent-glow)] font-bold scale-[1.02]"
               : "bg-black/[0.04] dark:bg-white/[0.05] border-black/[0.06] dark:border-white/[0.08] text-[#5C5549] dark:text-[#DDD4C4] hover:text-[#1D1A16] dark:hover:text-[#FFFFFF] hover:border-[var(--color-active-border)]/40 hover:scale-[1.02] active:scale-[0.98]"
           )}
-          title="فتح/إغلاق لوحة تخصيص الخزينة"
+          title={settings.language === 'en' ? "Open/Close Vault Customization" : "فتح/إغلاق لوحة تخصيص الخزينة"}
         >
           <Sliders className={cn("w-3.5 h-3.5 transition-transform duration-200", isCustomizationOpen ? "rotate-90 text-[var(--color-accent-warm)]" : "group-hover:rotate-45")} />
-          <span>تخصيص الخزينة</span>
+          <span>{settings.language === 'en' ? 'Customize' : 'تخصيص الخزينة'}</span>
         </button>
 
         {/* Quick Theme Toggle (Desktop Only) */}

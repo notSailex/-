@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { QuickNote, UserProfile } from '../../types/journal';
+import { QuickNote, UserProfile, ReminderFrequency } from '../../types/journal';
 import { loadStoredNotes, saveStoredNotes } from '../../lib/storage';
 import { fetchUserNotes, saveUserNote, deleteUserNote } from '../../lib/supabaseService';
+import { isNoteReminderOnDate } from '../calendar/Calendar';
 import {
   StickyNote,
   Plus,
@@ -17,12 +18,26 @@ import {
   ArrowRight,
   FileText,
   PenTool,
-  Lock
+  Lock,
+  Bell,
+  Calendar as CalendarIcon,
+  CheckCircle2,
+  AlertCircle,
+  Repeat,
+  X
 } from 'lucide-react';
-import { cn, toArabicNumerals, formatWordsCount } from '../../lib/utils';
+import { cn, toArabicNumerals, formatWordsCount, getTodayISODate } from '../../lib/utils';
 import { StylusCanvas } from '../common/StylusCanvas';
 
 const CATEGORIES = ['all', 'أفكار', 'إلهام', 'قراءة', 'مهام'] as const;
+
+const FREQUENCY_LABELS: Record<ReminderFrequency, string> = {
+  once: 'مرة واحدة',
+  daily: 'يومياً',
+  weekly: 'أسبوعياً',
+  monthly: 'شهرياً',
+  yearly: 'سنوياً',
+};
 
 interface QuickNotesViewProps {
   user?: UserProfile | null;
@@ -37,6 +52,7 @@ export const QuickNotesView: React.FC<QuickNotesViewProps> = ({ user, onRequireA
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving'>('saved');
+  const [isReminderOpen, setIsReminderOpen] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Global wipe event listener
@@ -228,6 +244,9 @@ export const QuickNotesView: React.FC<QuickNotesViewProps> = ({ user, onRequireA
     return text.trim().split(/[\s\n\r\t]+/).filter(w => w.length > 0).length;
   };
 
+  const todayIso = getTodayISODate();
+  const dueTodayNotes = notes.filter(n => isNoteReminderOnDate(n, todayIso));
+
   return (
     <div className="w-full max-w-6xl mx-auto animate-fade-in select-text">
       <AnimatePresence mode="wait">
@@ -258,6 +277,28 @@ export const QuickNotesView: React.FC<QuickNotesViewProps> = ({ user, onRequireA
                 >
                   تسجيل الدخول / إنشاء حساب
                 </button>
+              </div>
+            )}
+
+            {/* شريط التنبيهات المستحقة لليوم */}
+            {dueTodayNotes.length > 0 && (
+              <div className="p-4 rounded-3xl bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-amber-500/5 border border-amber-500/30 shadow-xs flex items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-3 text-amber-800 dark:text-amber-200">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                    <Bell className="w-4 h-4 animate-bounce" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-sm text-[var(--color-text-primary)] flex items-center gap-2">
+                      <span>تذكيرات مستحقة اليوم في جدولك</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500 text-white font-mono">
+                        {toArabicNumerals(dueTodayNotes.length)}
+                      </span>
+                    </div>
+                    <div className="text-xs text-[var(--color-text-secondary)] mt-0.5">
+                      {dueTodayNotes.map(n => n.title.trim() ? n.title : 'ملاحظة بدون عنوان').join(' • ')}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -434,6 +475,20 @@ export const QuickNotesView: React.FC<QuickNotesViewProps> = ({ user, onRequireA
                           {n.content.trim() ? n.content : 'لا يوجد نص مدوّن بعد... اضغط لفتح المحرر والكتابة'}
                         </p>
 
+                        {/* شارة التذكير المجدول إن وُجد */}
+                        {n.reminderDate && (
+                          <div className="flex items-center gap-1.5 mt-2.5 px-2.5 py-1 rounded-xl bg-amber-500/10 border border-amber-500/25 text-[11px] text-amber-700 dark:text-amber-300 w-fit">
+                            <Bell className="w-3 h-3 text-amber-500 shrink-0" />
+                            <span className="font-mono">{n.reminderDate}</span>
+                            {n.reminderTime && <span>• {n.reminderTime}</span>}
+                            {n.reminderFrequency && n.reminderFrequency !== 'once' && (
+                              <span className="text-[9px] bg-amber-500/20 px-1.5 py-0.2 rounded-md font-bold">
+                                {FREQUENCY_LABELS[n.reminderFrequency]}
+                              </span>
+                            )}
+                          </div>
+                        )}
+
                         {/* رسمة القلم المرفقة (إن وُجدت) */}
                         {n.drawingData && (
                           <div className="mt-2.5 p-1.5 rounded-xl bg-black/[0.02] dark:bg-white/[0.03] border border-[var(--color-border-subtle)] flex items-center justify-center h-16 overflow-hidden">
@@ -547,6 +602,24 @@ export const QuickNotesView: React.FC<QuickNotesViewProps> = ({ user, onRequireA
                     <option value="مهام"># مهام</option>
                   </select>
 
+                  {/* زر التذكير والتنبيه */}
+                  <button
+                    type="button"
+                    onClick={() => setIsReminderOpen(!isReminderOpen)}
+                    className={cn(
+                      "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all",
+                      activeNote.reminderDate || isReminderOpen
+                        ? "bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-300 font-bold shadow-xs"
+                        : "bg-black/[0.03] dark:bg-white/[0.03] border-[var(--color-border-subtle)] text-[#8C8476] hover:text-[var(--color-text-primary)]"
+                    )}
+                    title="جدولة تذكير وتنبيه للملاحظة بالتقويم"
+                  >
+                    <Bell className={cn("w-3.5 h-3.5", activeNote.reminderDate ? "fill-amber-500 text-amber-500" : "")} />
+                    <span className="hidden sm:inline">
+                      {activeNote.reminderDate ? 'تذكير مجدول' : 'تذكير'}
+                    </span>
+                  </button>
+
                   {/* زر التثبيت */}
                   <button
                     type="button"
@@ -594,6 +667,117 @@ export const QuickNotesView: React.FC<QuickNotesViewProps> = ({ user, onRequireA
                   className="w-full text-2xl md:text-3xl font-display font-bold bg-transparent text-[var(--color-text-primary)] placeholder-[#5C5549] dark:placeholder-[var(--color-text-muted)] focus:outline-none tracking-tight py-1"
                 />
               </div>
+
+              {/* لوحة ضبط التذكير والتنبيه للملاحظة */}
+              {(isReminderOpen || activeNote.reminderDate) && (
+                <div className="flex-shrink-0 p-4 rounded-2xl bg-amber-500/[0.08] dark:bg-amber-950/20 border border-amber-500/30 space-y-3 mb-4 animate-fade-in">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs font-bold text-amber-800 dark:text-amber-300">
+                      <Bell className="w-4 h-4 text-amber-500" />
+                      <span>جدولة تنبيه وتذكير للملاحظة (يظهر بالتقويم الرئيسي)</span>
+                    </div>
+                    {activeNote.reminderDate && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleUpdateActive({
+                            reminderDate: undefined,
+                            reminderTime: undefined,
+                            reminderFrequency: undefined,
+                          });
+                        }}
+                        className="text-[11px] text-rose-500 hover:underline flex items-center gap-1 font-semibold"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        <span>إلغاء التذكير</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {/* التاريخ */}
+                    <div>
+                      <label className="text-[11px] font-semibold text-amber-800 dark:text-amber-300 block mb-1">
+                        تاريخ التذكير (محدد)
+                      </label>
+                      <input
+                        type="date"
+                        value={activeNote.reminderDate || ''}
+                        onChange={(e) => handleUpdateActive({ reminderDate: e.target.value, reminderFrequency: activeNote.reminderFrequency || 'once' })}
+                        className="w-full text-xs px-3 py-2 rounded-xl bg-[var(--color-bg-surface)] dark:bg-[var(--color-bg-card)] border border-amber-500/30 text-[var(--color-text-primary)] focus:outline-none focus:ring-1 focus:ring-amber-500"
+                      />
+                    </div>
+
+                    {/* الوقت (اختياري) */}
+                    <div>
+                      <label className="text-[11px] font-semibold text-amber-800 dark:text-amber-300 block mb-1">
+                        الوقت (اختياري)
+                      </label>
+                      <input
+                        type="time"
+                        value={activeNote.reminderTime || ''}
+                        onChange={(e) => handleUpdateActive({ reminderTime: e.target.value })}
+                        className="w-full text-xs px-3 py-2 rounded-xl bg-[var(--color-bg-surface)] dark:bg-[var(--color-bg-card)] border border-amber-500/30 text-[var(--color-text-primary)] focus:outline-none focus:ring-1 focus:ring-amber-500"
+                      />
+                    </div>
+
+                    {/* نمط التكرار */}
+                    <div>
+                      <label className="text-[11px] font-semibold text-amber-800 dark:text-amber-300 block mb-1">
+                        نمط التكرار
+                      </label>
+                      <select
+                        value={activeNote.reminderFrequency || 'once'}
+                        onChange={(e) => handleUpdateActive({ reminderFrequency: e.target.value as ReminderFrequency })}
+                        className="w-full text-xs px-3 py-2 rounded-xl bg-[var(--color-bg-surface)] dark:bg-[var(--color-bg-card)] border border-amber-500/30 text-[var(--color-text-primary)] focus:outline-none focus:ring-1 focus:ring-amber-500 font-medium"
+                      >
+                        <option value="once">مرة واحدة فقط</option>
+                        <option value="daily">يومياً (تذكير دائم)</option>
+                        <option value="weekly">أسبوعياً (كل أسبوع)</option>
+                        <option value="monthly">شهرياً (نفس اليوم من كل شهر)</option>
+                        <option value="yearly">سنوياً (ذكرى سنوية)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* اختصارات سريعة */}
+                  <div className="flex items-center gap-2 pt-1 overflow-x-auto text-xs">
+                    <span className="text-[10px] text-amber-700 dark:text-amber-400 font-semibold shrink-0">اختيار سريع:</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const today = getTodayISODate();
+                        handleUpdateActive({ reminderDate: today, reminderFrequency: activeNote.reminderFrequency || 'once' });
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-900 dark:text-amber-200 text-[11px] transition-colors"
+                    >
+                      اليوم
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const tomorrow = new Date();
+                        tomorrow.setDate(tomorrow.getDate() + 1);
+                        handleUpdateActive({ reminderDate: tomorrow.toISOString().slice(0, 10), reminderFrequency: activeNote.reminderFrequency || 'once' });
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-900 dark:text-amber-200 text-[11px] transition-colors"
+                    >
+                      غداً
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const nextWeek = new Date();
+                        nextWeek.setDate(nextWeek.getDate() + 7);
+                        handleUpdateActive({ reminderDate: nextWeek.toISOString().slice(0, 10), reminderFrequency: activeNote.reminderFrequency || 'once' });
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-900 dark:text-amber-200 text-[11px] transition-colors"
+                    >
+                      الأسبوع القادم
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* المساحة الرئيسية للملاحظة: نصية أو رسم حر بالقلم */}
               <div className="flex-1 min-h-[380px] relative flex flex-col">

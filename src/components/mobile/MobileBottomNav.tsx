@@ -1,12 +1,14 @@
 import React from 'react';
 import { Home, StickyNote, BarChart2, Timer } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { AppSettings } from '../../types/journal';
 
 export type ActiveTab = 'home' | 'notes' | 'journal' | 'focus' | 'stats' | 'profile' | 'library' | 'admin';
 
 interface MobileBottomNavProps {
   activeTab: ActiveTab;
   onChangeTab: (tab: ActiveTab) => void;
+  settings?: AppSettings;
 }
 
 /**
@@ -76,7 +78,9 @@ const FeatherQuillIcon: React.FC<{ className?: string }> = ({ className }) => (
 export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   activeTab,
   onChangeTab,
+  settings,
 }) => {
+  const isEn = settings?.language === 'en';
   return (
     <nav className="fixed bottom-0 inset-x-0 z-40 lg:hidden bg-[var(--color-bg-base)] backdrop-blur-xl border-t border-[var(--color-border-subtle)] safe-area-bottom shadow-lg transition-all">
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto px-2 relative">
@@ -92,7 +96,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           )}
         >
           <Home className={cn("w-5 h-5", activeTab === 'home' && "stroke-[2.5px]")} />
-          <span className="text-[10px] mt-1 font-serif tracking-wider font-medium">الرئيسية</span>
+          <span className="text-[10px] mt-1 font-serif tracking-wider font-medium">{isEn ? 'Home' : 'الرئيسية'}</span>
         </button>
 
         {/* 2. الملاحظات */}
@@ -107,7 +111,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           )}
         >
           <StickyNote className={cn("w-5 h-5", activeTab === 'notes' && "stroke-[2.5px]")} />
-          <span className="text-[10px] mt-1 font-serif tracking-wider font-medium">الملاحظات</span>
+          <span className="text-[10px] mt-1 font-serif tracking-wider font-medium">{isEn ? 'Notes' : 'الملاحظات'}</span>
         </button>
 
         {/* 3. اليوميات (الزر العائم المركزي - قلم الريشة الأدبي الفاخر) */}
@@ -171,7 +175,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
                   : "text-[#7E786E] dark:text-[var(--color-text-muted)] group-hover:text-[#1D1A16] dark:group-hover:text-[#F3EFE6]"
               )}
             >
-              اليوميات
+              {isEn ? 'Journal' : 'اليوميات'}
             </span>
           </button>
         </div>
@@ -188,7 +192,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           )}
         >
           <BarChart2 className={cn("w-5 h-5", activeTab === 'stats' && "stroke-[2.5px]")} />
-          <span className="text-[10px] mt-1 font-serif tracking-wider font-medium">الإحصاءات</span>
+          <span className="text-[10px] mt-1 font-serif tracking-wider font-medium">{isEn ? 'Stats' : 'الإحصاءات'}</span>
         </button>
 
         {/* 5. التركيز */}
@@ -203,7 +207,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           )}
         >
           <Timer className={cn("w-5 h-5", activeTab === 'focus' && "stroke-[2.5px]")} />
-          <span className="text-[10px] mt-1 font-serif tracking-wider font-medium">التركيز</span>
+          <span className="text-[10px] mt-1 font-serif tracking-wider font-medium">{isEn ? 'Focus' : 'التركيز'}</span>
         </button>
       </div>
     </nav>

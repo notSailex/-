@@ -1,0 +1,258 @@
+export interface WisdomItem {
+  id: string;
+  type: 'lexical' | 'spiritual' | 'literary';
+  typeLabelAr: string;
+  typeLabelEn: string;
+  title: string;
+  text: string;
+  author: string;
+  badge?: string;
+}
+
+export interface GreetingItem {
+  ar: string;
+  en: string;
+}
+
+// ----------------------------------------------------------------------------
+// 1. باقة الترحيبات اليومية المتغيرة حسب الوقت والمزاج
+// ----------------------------------------------------------------------------
+export const DYNAMIC_GREETINGS: Record<'morning' | 'afternoon' | 'evening', GreetingItem[]> = {
+  morning: [
+    { ar: 'صباحٌ عامرٌ بالسكينة ونور الإيمان', en: 'A morning filled with peace and radiant light' },
+    { ar: 'أشرق يومك بالبركة والهمة العالية', en: 'May your day dawn with blessings and high spirits' },
+    { ar: 'طاب صباحك برضوان الله وطمأنينة القلب', en: 'Good morning with tranquility and heartful grace' },
+    { ar: 'صباح البدايات المتجددة والأفكار الصافية', en: 'A morning of fresh beginnings and clear thoughts' },
+    { ar: 'أهلاً بك في ملاذك الهادئ مع إشراقة الفجر', en: 'Welcome to your tranquil sanctuary at dawn' },
+  ],
+  afternoon: [
+    { ar: 'طاب يومك بكل يمن وتوفيق وبركة', en: 'Wishing you a day full of success and grace' },
+    { ar: 'مسيرة يوم مكللة بالإنجاز والصفاء', en: 'A journey of day crowned with progress and serenity' },
+    { ar: 'أهلاً بك مجدداً بين ثنايا أفكارك', en: 'Welcome back among the quiet folds of your thoughts' },
+    { ar: 'بارك الله في ساعاتك وجهدك الطيب', en: 'May your hours and earnest endeavors be blessed' },
+    { ar: 'واحة من الهدوء في خضم وتيرة النهار', en: 'An oasis of calm in the steady rhythm of the day' },
+  ],
+  evening: [
+    { ar: 'مساء الهدوء وتأملات الفكر الرصين', en: 'An evening of calm and quiet introspection' },
+    { ar: 'طابت ليلتك بالسكينة وراحة البال', en: 'Wishing you a night of peace and ease of mind' },
+    { ar: 'مساء قطاف الأيام وخلوة النفس الحالمة', en: 'An evening of harvest and contemplative retreat' },
+    { ar: 'سلامٌ على روحك في سكون هذا المساء', en: 'Peace upon your soul in the calm of this evening' },
+    { ar: 'أهلاً بك في خلوة المساء مع قلمك ودفترك', en: 'Welcome to your evening solitude with pen and book' },
+  ],
+};
+
+// ----------------------------------------------------------------------------
+// 2. مكتبة المعجم اللغوي والأدب والدين (تتغير تلقائياً مع كل تسجيل دخول/يوم)
+// ----------------------------------------------------------------------------
+export const WISDOM_LIBRARY: WisdomItem[] = [
+  // --- قسم المعجم اللغوي ---
+  {
+    id: 'lex-1',
+    type: 'lexical',
+    typeLabelAr: 'درر المعجم',
+    typeLabelEn: 'Lexicon Gem',
+    title: 'السَّكِينَة',
+    text: '«السَّكِينَة: فَعِيلَةٌ مِنَ السُّكُونِ، وَهِيَ الطُّمَأْنِينَةُ وَالوِقَارُ الَّذِي يَهْبِطُ عَلَى القَلْبِ فَيَمْلَؤُهُ ثَبَاتاً وَانْشِرَاحاً عِنْدَ اضْطِرَابِ الأُمُورِ.»',
+    author: 'لسان العرب - ابن منظور',
+    badge: 'فصاحة لغوية',
+  },
+  {
+    id: 'lex-2',
+    type: 'lexical',
+    typeLabelAr: 'درر المعجم',
+    typeLabelEn: 'Lexicon Gem',
+    title: 'الإِخْبَات',
+    text: '«الإِخْبَاتُ: أَنْ يَلِينَ القَلْبُ وَيَخْشَعَ، وَأَصْلُهُ مِنَ الخَبْتِ وَهُوَ المَكَانُ المُنْخَفِضُ المُطْمَئِنُّ مِنَ الأَرْضِ، فَالمُخْبِتُ مَنْ سَكَنَ إِلَى رَبِّهِ وَاسْتَقَرَّ فُؤَادُهُ.»',
+    author: 'مفردات ألفاظ القرآن - الراغب الأصفهاني',
+    badge: 'معجم قرآني',
+  },
+  {
+    id: 'lex-3',
+    type: 'lexical',
+    typeLabelAr: 'درر المعجم',
+    typeLabelEn: 'Lexicon Gem',
+    title: 'الرَّوِيَّة',
+    text: '«الرَّوِيَّةُ: إِجَالَةُ الفِكْرِ فِي الأَمْرِ وَالنَّظَرُ فِيهِ قَبْلَ الإِقْدَامِ عَلَيْهِ، وَهِيَ خَصْلَةُ الحُلَمَاءِ وَعِمَادُ التَّدْبِيرِ الحَكِيمِ.»',
+    author: 'الصحاح - الجوهري',
+    badge: 'بلاغة وأدب',
+  },
+  {
+    id: 'lex-4',
+    type: 'lexical',
+    typeLabelAr: 'درر المعجم',
+    typeLabelEn: 'Lexicon Gem',
+    title: 'السَّرِيرَة',
+    text: '«السَّرِيرَةُ: مَا يُسِرُّهُ الإِنْسَانُ فِي نَفْسِهِ مِنْ نِيَّةٍ وَخُلُقٍ، وَجَمْعُهَا سَرَائِرُ؛ وَصَلَاحُهَا مِعْرَاجُ صَلَاحِ الظَّاهِرِ وَعُنْوَانُ البَصِيرَةِ.»',
+    author: 'تاج العروس - الزبيدي',
+    badge: 'لطائف لغوية',
+  },
+  {
+    id: 'lex-5',
+    type: 'lexical',
+    typeLabelAr: 'درر المعجم',
+    typeLabelEn: 'Lexicon Gem',
+    title: 'الأُلْفَة',
+    text: '«الأُلْفَةُ: اجْتِمَاعُ القُلُوبِ عَلَى المَوَدَّةِ، وَمِنْهُ قَوْلُهُمْ: أَلِفَ الشَّيْءَ إِذَا أَنِسَ بِهِ؛ وَهِيَ زِينَةُ الأَرْوَاحِ وَرِبَاطُ السَّعَادَةِ.»',
+    author: 'جمهرة اللغة - ابن دريد',
+    badge: 'معجم البيان',
+  },
+
+  // --- قسم النفحات الدينية والروحية ---
+  {
+    id: 'spir-1',
+    type: 'spiritual',
+    typeLabelAr: 'نفحة دينية',
+    typeLabelEn: 'Spiritual Pearl',
+    title: 'في حقيقة طمأنينة القلب',
+    text: '«فِي القَلْبِ شَعَثٌ لَا يَلُمُّهُ إِلَّا الإِقْبَالُ عَلَى اللَّهِ، وَفِيهِ وَحْشَةٌ لَا يُزِيلُهَا إِلَّا الأُنْسُ بِهِ فِي خَلْوَتِهِ، وَفِيهِ حُزْنٌ لَا يُذْهِبُهُ إِلَّا السُّرُورُ بِمَعْرِفَتِهِ وَصِدْقُ مُعَامَلَتِهِ.»',
+    author: 'الإمام ابن القيم - مدارج السالكين',
+    badge: 'تزكية وسكينة',
+  },
+  {
+    id: 'spir-2',
+    type: 'spiritual',
+    typeLabelAr: 'نفحة دينية',
+    typeLabelEn: 'Spiritual Pearl',
+    title: 'قيمة اللحظة الحاضرة',
+    text: '«إِنَّمَا أَنْتَ أَيَّامٌ مَعْدُودَةٌ، كُلَّمَا ذَهَبَ يَوْمٌ ذَهَبَ بَعْضُكَ، فَاعْمَلْ لِيَوْمِكَ كَأَنَّكَ لَا تَرَى غَدَهُ، وَاحْفَظْ سَاعَاتِكَ فَإِنَّهَا رَأْسُ مَالِكَ.»',
+    author: 'الحسن البصري',
+    badge: 'حكمة السلف',
+  },
+  {
+    id: 'spir-3',
+    type: 'spiritual',
+    typeLabelAr: 'نفحة دينية',
+    typeLabelEn: 'Spiritual Pearl',
+    title: 'استراحة النفس في الخلوة',
+    text: '«مَنْ أَرَادَ صَفَاءَ قَلْبِهِ فَلْيُؤْثِرِ اللَّهَ عَلَى شَهْوَتِهِ؛ وَالقُلُوبُ المُنْقَطِعَةُ إِلَى اللَّهِ تَرَى مِنَ الفَهْمِ وَالنُّورِ مَا لَا تَرَاهُ عُيُونُ الغَافِلِينَ.»',
+    author: 'ابن الجوزي - صيد الخاطر',
+    badge: 'صفاء النفس',
+  },
+  {
+    id: 'spir-4',
+    type: 'spiritual',
+    typeLabelAr: 'نفحة دينية',
+    typeLabelEn: 'Spiritual Pearl',
+    title: 'حسن الظن والتوكل',
+    text: '«لَوْ عَلِمَ العَبْدُ كَيْفَ يُدَبِّرُ اللَّهُ لَهُ أُمُورَهُ لَذَابَ قَلْبُهُ مِنْ مَحَبَّتِهِ؛ فَلَا تَحْمِلْ هَمَّ الرِّزْقِ فَإِنَّهُ مَضْمُونٌ، وَلَكِنِ احْمِلْ هَمَّ رِضَاهُ فَإِنَّهُ المَطْلُوبُ.»',
+    author: 'حكمة مأثورة',
+    badge: 'يقين ورجاء',
+  },
+  {
+    id: 'spir-5',
+    type: 'spiritual',
+    typeLabelAr: 'نفحة دينية',
+    typeLabelEn: 'Spiritual Pearl',
+    title: 'أثر الذكر الصادق',
+    text: '«الذِّكْرُ لِلْقَلْبِ مِثْلُ المَاءِ لِلسَّمَكِ، فَكَيْفَ يَكُونُ حَالُ السَّمَكِ إِذَا فَارَقَ المَاءَ؟ كَذَلِكَ القَلْبُ لَا يَحْيَا إِلَّا بِحُضُورِهِ مَعَ خَالِقِهِ.»',
+    author: 'الإمام ابن تيمية',
+    badge: 'حياة القلوب',
+  },
+
+  // --- قسم الدرر الأدبية والفكرية ---
+  {
+    id: 'lit-1',
+    type: 'literary',
+    typeLabelAr: 'درّة أدبية',
+    typeLabelEn: 'Literary Gem',
+    title: 'فلسفة الكلمة والورق',
+    text: '«إِنَّ لِكُلِّ كَلِمَةٍ تَكْتُبُهَا رُوحاً تَسْرِي فِيهَا، وَالكِتَابَةُ لَيْسَتْ سِوَى صَوْتِ النَّفْسِ حِينَ تَفِيضُ بِمَا لَا يَتَّسِعُ لَهُ المَنْطِقُ الشَّفَهِيُّ؛ فَاجْعَلْ حُرُوفَكَ مِرْآةً لِنُبْلِ مَقَاصِدِكَ.»',
+    author: 'مصطفى صادق الرافعي - وحي القلم',
+    badge: 'أدب رفيع',
+  },
+  {
+    id: 'lit-2',
+    type: 'literary',
+    typeLabelAr: 'درّة أدبية',
+    typeLabelEn: 'Literary Gem',
+    title: 'عزاء القراءة وصحبة الكتب',
+    text: '«الكِتَابُ هُوَ الجَلِيسُ الَّذِي لَا يُطْرِيكَ، وَالصَّدِيقُ الَّذِي لَا يَغُرُّكَ، وَالصَّاحِبُ الَّذِي لَا يَمَلُّكَ، يُعْطِيكَ خُلَاصَةَ عُمْرِهِ وَلَا يَطْلُبُ مِنْكَ إِلَّا إِصْغَاءَكَ.»',
+    author: 'الجاحظ - كتاب الحيوان',
+    badge: 'أدب القراءة',
+  },
+  {
+    id: 'lit-3',
+    type: 'literary',
+    typeLabelAr: 'درّة أدبية',
+    typeLabelEn: 'Literary Gem',
+    title: 'في الصبر وإتقان المسير',
+    text: '«تُرِيدُ نَيْلَ المَعَالِي رَخِيصَةً؟! لَا يُدْرَكُ الشَّرَفُ الأَسْمَى بِلَا كَبَدٍ، وَإِنَّمَا قِيمَةُ المَرْءِ مَا يُحْسِنُهُ، وَبِقَدْرِ مَا يَتَعَنَّى يَنَالُ مَا يَتَمَنَّى.»',
+    author: 'أبو الطيب المتنبي',
+    badge: 'شعر وحكمة',
+  },
+  {
+    id: 'lit-4',
+    type: 'literary',
+    typeLabelAr: 'درّة أدبية',
+    typeLabelEn: 'Literary Gem',
+    title: 'قيمة العزلة الواعية',
+    text: '«لَيْسَتِ العُزْلَةُ انْقِطَاعاً عَنِ الحَيَاةِ، بَلْ هِيَ التِقَاطُ الأَنْفَاسِ لِرُؤْيَتِهَا مِنْ عَلٍ؛ مَنْ لَا يَخْلُو بِنَفْسِهِ سَاعَةً كُلَّ يَوْمٍ أَوْشَكَ أَنْ يَضِيعَ فِي زِحَامِ العَابِرِينَ.»',
+    author: 'أحمد أمين - فيض الخاطر',
+    badge: 'تأمل فكري',
+  },
+  {
+    id: 'lit-5',
+    type: 'literary',
+    typeLabelAr: 'درّة أدبية',
+    typeLabelEn: 'Literary Gem',
+    title: 'حفظ الخواطر',
+    text: '«إِنَّ الخَوَاطِرَ كَالصَّيْدِ الشَّارِدِ، إِنْ لَمْ تُقَيِّدْهَا بِحِبَالِ الكِتَابَةِ فَرَّتْ، وَكَمْ مِنْ فِكْرَةٍ أَوْمَضَتْ فِي لَيْلٍ ثُمَّ غَرَبَتْ لَمَّا أَهْمَلَهَا صَاحِبُهَا.»',
+    author: 'الإمام الشافعي',
+    badge: 'أدب التدوين',
+  },
+];
+
+// ----------------------------------------------------------------------------
+// دوال اختيار الحكمة والترحيب ديناميكياً
+// ----------------------------------------------------------------------------
+
+const STORAGE_KEY_WISDOM_INDEX = 'trmez_wisdom_active_index_v1';
+
+export function getDynamicGreeting(lang: 'ar' | 'en' = 'ar'): string {
+  const hour = new Date().getHours();
+  const timeSlot: 'morning' | 'afternoon' | 'evening' =
+    hour >= 4 && hour < 12 ? 'morning' : hour >= 12 && hour < 17 ? 'afternoon' : 'evening';
+
+  const list = DYNAMIC_GREETINGS[timeSlot];
+  // اختيار ترحيب بناءً على اليوم والدقيقة لتجدده تلقائياً
+  const d = new Date();
+  const seed = (d.getDate() * 31 + d.getHours()) % list.length;
+  const item = list[seed] || list[0];
+  return lang === 'en' ? item.en : item.ar;
+}
+
+export function getCurrentWisdom(): WisdomItem {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY_WISDOM_INDEX);
+    if (stored !== null) {
+      const idx = parseInt(stored, 10);
+      if (!isNaN(idx) && WISDOM_LIBRARY[idx]) {
+        return WISDOM_LIBRARY[idx];
+      }
+    }
+  } catch {
+    // Ignore
+  }
+
+  // إذا لم يكن مخزناً، نختار عنصراً بالاعتماد على اليوم في الشهر
+  const day = new Date().getDate();
+  const idx = day % WISDOM_LIBRARY.length;
+  return WISDOM_LIBRARY[idx];
+}
+
+export function cycleNextWisdom(): WisdomItem {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY_WISDOM_INDEX);
+    let nextIdx = 0;
+    if (stored !== null) {
+      const current = parseInt(stored, 10);
+      nextIdx = (current + 1) % WISDOM_LIBRARY.length;
+    } else {
+      nextIdx = 1 % WISDOM_LIBRARY.length;
+    }
+    localStorage.setItem(STORAGE_KEY_WISDOM_INDEX, String(nextIdx));
+    return WISDOM_LIBRARY[nextIdx];
+  } catch {
+    return WISDOM_LIBRARY[0];
+  }
+}

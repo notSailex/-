@@ -30,6 +30,8 @@ export interface JournalEntry {
   images?: string[]; // صور مرفقة بالتدوينة (بحد أقصى 3 صور)
 }
 
+export type ReminderFrequency = 'once' | 'daily' | 'weekly' | 'monthly' | 'yearly';
+
 export interface QuickNote {
   id: string;
   title: string;
@@ -38,6 +40,10 @@ export interface QuickNote {
   pinned: boolean;
   updatedAt: string;
   drawingData?: string; // رسومات القلم الذكي (Data URL)
+  reminderDate?: string; // ISO Date YYYY-MM-DD
+  reminderTime?: string; // HH:mm
+  reminderFrequency?: ReminderFrequency;
+  reminderCompleted?: boolean;
 }
 
 export interface UserStats {

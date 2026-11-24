@@ -16,7 +16,9 @@ import {
   Grid,
   Square,
   Calendar as CalendarIcon,
-  Check
+  Check,
+  Type,
+  Globe
 } from 'lucide-react';
 import { cn, toArabicNumerals } from '../../lib/utils';
 import { ambientSound } from '../../lib/audio';
@@ -328,6 +330,80 @@ export const CustomizationStudio: React.FC<CustomizationStudioProps> = ({
               خط تجوال
             </div>
             <div className="text-[9px] text-[var(--color-text-muted)]">هندسي واضح وعصري</div>
+          </button>
+        </div>
+      </div>
+
+      {/* Global Font Size (حجم خط الموقع بالكامل) */}
+      <div className="space-y-1.5 pt-1">
+        <div className="flex items-center justify-between">
+          <label className="text-[11px] font-semibold text-[#8C8476] dark:text-[var(--color-text-muted)] flex items-center gap-1.5">
+            <Type className="w-3.5 h-3.5 text-[var(--color-accent-warm)]" />
+            <span>حجم الخط العام للواجهة</span>
+          </label>
+          <span className="text-[9px] text-[var(--color-accent-warm)] font-medium">مريح لكبار السن</span>
+        </div>
+        <div className="grid grid-cols-4 gap-1.5">
+          {[
+            { id: 'sm', label: 'صغير', desc: '14' },
+            { id: 'base', label: 'قياسي', desc: '16' },
+            { id: 'lg', label: 'كبير', desc: '18' },
+            { id: 'xl', label: 'كبير جداً', desc: '20' },
+          ].map(({ id, label, desc }) => {
+            const isSelected = (settings.fontSize || 'base') === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => onUpdateSettings?.({ fontSize: id as AppSettings['fontSize'] })}
+                className={cn(
+                  "flex flex-col items-center justify-center py-1.5 px-1 rounded-xl border text-center transition-all duration-200",
+                  isSelected
+                    ? "bg-[var(--color-active-card)] text-[var(--color-text-primary)] border-[1.5px] border-[var(--color-active-border)] shadow-xs font-bold"
+                    : "bg-black/[0.02] dark:bg-[var(--color-bg-surface)] text-[var(--color-text-secondary)] border-[var(--color-border-subtle)] hover:border-[var(--color-active-border)]/40 hover:text-[var(--color-text-primary)]"
+                )}
+              >
+                <span className="text-[11px] font-bold">{label}</span>
+                <span className="text-[9px] opacity-70 font-mono">{desc}px</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Language Switcher (العربية / English) */}
+      <div className="space-y-1.5 pt-1">
+        <label className="text-[11px] font-semibold text-[#8C8476] dark:text-[var(--color-text-muted)] flex items-center gap-1.5">
+          <Globe className="w-3.5 h-3.5 text-[var(--color-accent-warm)]" />
+          <span>لغة الواجهة (Language)</span>
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => onUpdateSettings?.({ language: 'ar' })}
+            className={cn(
+              "flex items-center justify-between p-2 rounded-xl border text-start transition-all",
+              settings.language !== 'en'
+                ? "bg-[var(--color-active-card)] text-[var(--color-text-primary)] border-[1.5px] border-[var(--color-active-border)] shadow-xs font-bold"
+                : "bg-black/[0.02] dark:bg-[var(--color-bg-surface)] text-[var(--color-text-secondary)] border-[var(--color-border-subtle)] hover:border-[var(--color-active-border)]/40"
+            )}
+          >
+            <span className="text-xs">العربية (الافتراضية)</span>
+            {settings.language !== 'en' && <Check className="w-3.5 h-3.5 text-[var(--color-accent-warm)]" />}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onUpdateSettings?.({ language: 'en' })}
+            className={cn(
+              "flex items-center justify-between p-2 rounded-xl border text-start transition-all",
+              settings.language === 'en'
+                ? "bg-[var(--color-active-card)] text-[var(--color-text-primary)] border-[1.5px] border-[var(--color-active-border)] shadow-xs font-bold"
+                : "bg-black/[0.02] dark:bg-[var(--color-bg-surface)] text-[var(--color-text-secondary)] border-[var(--color-border-subtle)] hover:border-[var(--color-active-border)]/40"
+            )}
+          >
+            <span className="text-xs font-sans">English</span>
+            {settings.language === 'en' && <Check className="w-3.5 h-3.5 text-[var(--color-accent-warm)]" />}
           </button>
         </div>
       </div>

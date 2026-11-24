@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { JournalEntry, UserStats, AppSettings } from '../../types/journal';
 import { ActiveTab } from '../mobile/MobileBottomNav';
 import { Calendar } from '../calendar/Calendar';
@@ -22,8 +22,17 @@ import {
   BookOpen,
   Calendar as CalendarIcon,
   Library,
-  Timer
+  Timer,
+  RefreshCw,
+  BookMarked
 } from 'lucide-react';
+import {
+  getDynamicGreeting,
+  getCurrentWisdom,
+  cycleNextWisdom,
+  WisdomItem
+} from '../../lib/dailyWisdom';
+import { getTranslation } from '../../lib/i18n';
 
 interface HomeDashboardProps {
   entries: Record<string, JournalEntry>;
@@ -35,13 +44,6 @@ interface HomeDashboardProps {
   onNavigateTab?: (tab: ActiveTab) => void;
 }
 
-const LITERARY_QUOTES = [
-  { text: '«إن الكلمات حين تُسكب على الورق بصدق، تصبح بيتاً آمناً لروح الكاتب.»', author: 'فكرة تأملية' },
-  { text: '«الكتابة هي الطريقة الوحيدة التي نتحدث بها مع أنفسنا دون مقاطعة من العالم.»', author: 'أدب التدوين' },
-  { text: '«الأيام تمضي سريعاً، وما لم نكتبه ونعشه بوعي يغيب في غياهب النسيان.»', author: 'حكمة الأيام' },
-  { text: '«في كل سطر تكتبه بهدوء، تبني مسافة صحية بينك وبين صخب الحياة.»', author: 'سكينة الفكر' },
-];
-
 export const HomeDashboard: React.FC<HomeDashboardProps> = ({
   entries,
   selectedDate,
@@ -51,6 +53,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
   settings,
   onNavigateTab,
 }) => {
+  const lang = settings?.language || 'ar';
   const todayISO = getTodayISODate();
   const todayFormatted = formatDateArabic(todayISO, {
     showMonthNumber: settings?.showMonthNumber,
@@ -59,12 +62,19 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
   const todayEntry = entries[todayISO];
   const hasTodayEntry = todayEntry && todayEntry.content.trim().length > 0;
 
-  // Determine friendly time-of-day greeting
-  const currentHour = new Date().getHours();
-  const greeting = currentHour < 12 ? 'صباح السكينة والضوء' : currentHour < 17 ? 'طاب يومك بكل خير' : 'مساء الهدوء والراحة';
+  // Dynamic greeting that rotates by time-of-day & day
+  const greeting = getDynamicGreeting(lang);
 
-  // Deterministic daily quote
-  const quote = LITERARY_QUOTES[todayFormatted.dayNumber % LITERARY_QUOTES.length];
+  // Rotating wisdom / lexicon / literary / spiritual pearls
+  const [wisdom, setWisdom] = useState<WisdomItem>(() => getCurrentWisdom());
+  const [isRotating, setIsRotating] = useState(false);
+
+  const handleCycleWisdom = () => {
+    setIsRotating(true);
+    const next = cycleNextWisdom();
+    setWisdom(next);
+    setTimeout(() => setIsRotating(false), 300);
+  };
 
   // Recent entries list (sorted newest first)
   const recentEntries = Object.values(entries)
@@ -133,39 +143,92 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
             aria-hidden="true"
           />
 
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-xs font-semibold text-[var(--color-accent-warm)]">
-              <Sparkles className="w-4 h-4" />
-              <span>{todayFormatted.fullString}</span>
+          <div className="relative z-10 flex flex-col md:flex-row md:items-start justify-between gap-6">
+            <div className="space-y-3 flex-1">
+              <div className="flex items-center gap-2 text-xs font-semibold text-[var(--color-accent-warm)]">
+                <Sparkles className="w-4 h-4 shrink-0" />
+                <span>{todayFormatted.fullString}</span>
+              </div>
+
+              <h1 className="text-2xl sm:text-3xl md:text-5xl font-display font-bold text-[var(--color-text-primary)] tracking-tight">
+                {greeting}
+              </h1>
+
+              {/* Dynamic Wisdom Card (Lexicon / Spiritual / Literary) */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-black/[0.03] dark:bg-black/30 border border-black/[0.06] dark:border-white/[0.08] backdrop-blur-xs max-w-2xl transition-all">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className={cn(
+                      "px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase",
+                      wisdom.type === 'lexical'
+                        ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25"
+                        : wisdom.type === 'spiritual'
+                        ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25"
+                        : "bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/25"
+                    )}>
+                      {lang === 'en' ? wisdom.typeLabelEn : wisdom.typeLabelAr}
+                    </span>
+                    <span className="text-xs font-bold text-[var(--color-text-primary)]">
+                      {wisdom.title}
+                    </span>
+                  </div>
+
+                  {/* Cycle Wisdom Button */}
+                  <button
+                    type="button"
+                    onClick={handleCycleWisdom}
+                    disabled={isRotating}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-xl text-[10px] font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-accent-warm)] bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.08] dark:hover:bg-white/[0.1] transition-all active:scale-95"
+                    title={getTranslation('dashboard_cycle_wisdom', lang)}
+                  >
+                    <RefreshCw className={cn("w-3 h-3", isRotating && "animate-spin")} />
+                    <span>{getTranslation('dashboard_cycle_wisdom', lang)}</span>
+                  </button>
+                </div>
+
+                <p className="text-xs sm:text-sm text-[var(--color-text-secondary)] font-text leading-relaxed italic">
+                  {wisdom.text}
+                </p>
+
+                <div className="mt-2 text-[11px] font-medium text-[var(--color-accent-warm)] flex items-center justify-between">
+                  <span>— {wisdom.author}</span>
+                  {wisdom.badge && (
+                    <span className="text-[10px] text-[var(--color-text-muted)]">
+                      #{wisdom.badge}
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
-            <h1 className="text-3xl md:text-5xl font-display font-bold text-[var(--color-text-primary)] tracking-tight">
-              {greeting}
-            </h1>
-            <p className="text-sm md:text-base text-[var(--color-text-secondary)] max-w-xl font-text italic pt-1 leading-relaxed">
-              {quote.text}
-            </p>
-          </div>
 
-          {/* Quick Write Today Call-to-Action */}
-          <div className="shrink-0 flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={onStartWritingToday}
-              className="group flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-[#B87B22] to-[#D49838] dark:from-[#9E6518] dark:to-[#B87B22] hover:opacity-95 text-white font-bold text-sm shadow-md shadow-[#B87B22]/15 transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0"
-            >
-              <Feather className="w-4 h-4 transform group-hover:-rotate-12 transition-transform" />
-              <span>{hasTodayEntry ? 'متابعة تدوينة اليوم' : 'اكتب تدوينة اليوم'}</span>
-              <ArrowLeft className="w-4 h-4 transform group-hover:-translate-x-1 transition-transform" />
-            </button>
+            {/* Quick Write Today Call-to-Action */}
+            <div className="shrink-0 flex flex-col gap-2 self-start md:self-center">
+              <button
+                type="button"
+                onClick={onStartWritingToday}
+                className="group flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-[#B87B22] to-[#D49838] dark:from-[#9E6518] dark:to-[#B87B22] hover:opacity-95 text-white font-bold text-sm shadow-md shadow-[#B87B22]/15 transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0"
+              >
+                <Feather className="w-4 h-4 transform group-hover:-rotate-12 transition-transform" />
+                <span>
+                  {hasTodayEntry
+                    ? (lang === 'en' ? "Continue Today's Journal" : 'متابعة تدوينة اليوم')
+                    : getTranslation('dashboard_start_writing', lang)}
+                </span>
+                <ArrowLeft className={cn(
+                  "w-4 h-4 transform transition-transform",
+                  lang === 'en' ? "group-hover:translate-x-1 rotate-180" : "group-hover:-translate-x-1"
+                )} />
+              </button>
 
-            {hasTodayEntry && (
-              <span className="text-[11px] text-center text-[var(--color-text-muted)]">
-                كتبت اليوم {formatWordsCount(todayEntry.wordCount)}
-              </span>
-            )}
+              {hasTodayEntry && (
+                <span className="text-[11px] text-center text-[var(--color-text-muted)]">
+                  {lang === 'en'
+                    ? `Written today: ${todayEntry.wordCount} words`
+                    : `كتبت اليوم ${formatWordsCount(todayEntry.wordCount)}`}
+                </span>
+              )}
+            </div>
           </div>
-        </div>
       </div>
     </div>
 

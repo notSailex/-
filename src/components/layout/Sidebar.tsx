@@ -35,13 +35,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isCustomizationOpen = false,
   onToggleCustomization,
 }) => {
+  const isEn = settings.language === 'en';
   const navItems: { id: ActiveTab; label: string; icon: React.ElementType }[] = [
-    { id: 'home', label: 'الرئيسية والتقويم', icon: Home },
-    { id: 'journal', label: 'كتاب اليوميات', icon: BookOpen },
-    { id: 'notes', label: 'الملاحظات السريعة', icon: StickyNote },
-    { id: 'library', label: 'مكتبتي', icon: Library },
-    { id: 'focus', label: 'جلسات التركيز', icon: Timer },
-    { id: 'stats', label: 'الإحصاءات والنبض', icon: BarChart2 },
+    { id: 'home', label: isEn ? 'Home & Calendar' : 'الرئيسية والتقويم', icon: Home },
+    { id: 'journal', label: isEn ? 'Daily Journal' : 'كتاب اليوميات', icon: BookOpen },
+    { id: 'notes', label: isEn ? 'Quick Notes' : 'الملاحظات السريعة', icon: StickyNote },
+    { id: 'library', label: isEn ? 'My Library' : 'مكتبتي', icon: Library },
+    { id: 'focus', label: isEn ? 'Focus Sanctuary' : 'جلسات التركيز', icon: Timer },
+    { id: 'stats', label: isEn ? 'Stats & Pulse' : 'الإحصاءات والنبض', icon: BarChart2 },
   ];
 
   return (
@@ -64,10 +65,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* Harmonious Typography Alignment */}
           <div className="flex flex-col justify-center select-none">
             <h1 className="text-[17px] font-display font-black tracking-tight text-[var(--color-text-primary)] leading-none">
-              تِرميـز
+              {isEn ? 'Trmez' : 'تِرميـز'}
             </h1>
             <p className="text-[10px] text-[var(--color-text-muted)] tracking-wide font-medium mt-1 leading-none">
-              دفتر التدوين والتأمل الهادئ
+              {isEn ? 'Mindful Journal & Sanctuary' : 'دفتر التدوين والتأمل الهادئ'}
             </p>
           </div>
         </div>
@@ -113,7 +114,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             >
               <div className="flex items-center gap-3">
                 <Crown className="w-4 h-4 fill-current text-amber-500 transition-transform group-hover:scale-110" />
-                <span>مركز إدارة النظام</span>
+                <span>{isEn ? 'Admin Center' : 'مركز إدارة النظام'}</span>
               </div>
               <span className="px-1.5 py-0.5 rounded text-[9px] bg-amber-500/20 text-amber-400 font-bold border border-amber-400/30">
                 VIP

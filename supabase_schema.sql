@@ -382,6 +382,14 @@ SET id = 'entry-' || user_id || '-' || date
 WHERE id NOT LIKE 'entry-%-%-%-%-%';
 
 -- ==============================================================================
+-- إضافة أعمدة التذكيرات والجدولة لجدول الملاحظات (Notes Reminders)
+-- ==============================================================================
+ALTER TABLE public.notes ADD COLUMN IF NOT EXISTS reminder_date TEXT;
+ALTER TABLE public.notes ADD COLUMN IF NOT EXISTS reminder_time TEXT;
+ALTER TABLE public.notes ADD COLUMN IF NOT EXISTS reminder_frequency TEXT DEFAULT 'once';
+ALTER TABLE public.notes ADD COLUMN IF NOT EXISTS reminder_completed BOOLEAN DEFAULT FALSE;
+
+-- ==============================================================================
 -- كيفية تعيين حسابك كـ "أدمن" (Admin):
 -- بعد تسجيل حسابك بالبريد الإلكتروني في التطبيق، قم بتشغيل الأمر التالي:
 -- UPDATE public.profiles SET role = 'admin' WHERE email = 'ضع_بريدك_هنا@example.com';

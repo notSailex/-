@@ -261,6 +261,7 @@ export const App: React.FC = () => {
             <FocusTimerView
               user={user}
               onRequireAuth={() => setIsAuthOpen(true)}
+              settings={settings}
             />
           )}
 
@@ -306,6 +307,7 @@ export const App: React.FC = () => {
       <MobileBottomNav
         activeTab={activeTab}
         onChangeTab={setActiveTab}
+        settings={settings}
       />
 
       {/* Auth Modal (Login / Register / Supabase) */}

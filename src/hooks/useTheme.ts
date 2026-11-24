@@ -36,6 +36,20 @@ export function useTheme() {
     root.style.setProperty('--app-font-display', config.display);
     root.style.setProperty('--app-font', config.text);
     root.style.setProperty('--app-font-serif', config.display);
+
+    // Apply global font size scaling (sm: 14px, base: 16px, lg: 18px, xl: 20px)
+    const FONT_SIZE_MAP: Record<AppSettings['fontSize'], string> = {
+      sm: '14px',
+      base: '16px',
+      lg: '18px',
+      xl: '20px',
+    };
+    root.style.fontSize = FONT_SIZE_MAP[settings.fontSize || 'base'] || '16px';
+
+    // Apply global language and direction (Arabic RTL vs English LTR)
+    const lang = settings.language || 'ar';
+    root.setAttribute('lang', lang);
+    root.setAttribute('dir', lang === 'en' ? 'ltr' : 'rtl');
     
     // Save to local storage
     saveStoredSettings(settings);

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { JournalEntry, MoodType, AppSettings } from '../../types/journal';
+import { JournalEntry, MoodType, AppSettings, QuickNote } from '../../types/journal';
+import { loadStoredNotes } from '../../lib/storage';
 import {
   ARABIC_MONTHS,
   ARABIC_DAYS,
@@ -15,14 +16,50 @@ import {
   ChevronLeft,
   Calendar as CalendarIcon,
   Sparkles,
-  Feather
+  Feather,
+  Bell
 } from 'lucide-react';
+
+export function isNoteReminderOnDate(note: QuickNote, targetIso: string): boolean {
+  if (!note.reminderDate) return false;
+  if (note.reminderCompleted) return false;
+
+  const remDate = note.reminderDate;
+  const freq = note.reminderFrequency || 'once';
+
+  if (freq === 'once') {
+    return remDate === targetIso;
+  }
+  if (freq === 'daily') {
+    return targetIso >= remDate;
+  }
+  if (freq === 'weekly') {
+    if (targetIso < remDate) return false;
+    const remD = new Date(remDate);
+    const targetD = new Date(targetIso);
+    return remD.getDay() === targetD.getDay();
+  }
+  if (freq === 'monthly') {
+    if (targetIso < remDate) return false;
+    const remD = new Date(remDate);
+    const targetD = new Date(targetIso);
+    return remD.getDate() === targetD.getDate();
+  }
+  if (freq === 'yearly') {
+    if (targetIso < remDate) return false;
+    const remD = new Date(remDate);
+    const targetD = new Date(targetIso);
+    return remD.getMonth() === targetD.getMonth() && remD.getDate() === targetD.getDate();
+  }
+  return false;
+}
 
 interface CalendarProps {
   entries: Record<string, JournalEntry>;
   selectedDate: string;
   onSelectDate: (date: string) => void;
   settings?: AppSettings;
+  notes?: QuickNote[];
 }
 
 export const Calendar: React.FC<CalendarProps> = ({
@@ -30,7 +67,11 @@ export const Calendar: React.FC<CalendarProps> = ({
   selectedDate,
   onSelectDate,
   settings,
+  notes: propNotes,
 }) => {
+  // Load notes for reminder indicators
+  const notes = propNotes || loadStoredNotes();
+
   // Device's current real date
   const todayISO = getTodayISODate();
   const [todayY, todayM] = todayISO.split('-').map(Number);
@@ -224,6 +265,7 @@ export const Calendar: React.FC<CalendarProps> = ({
               const hasContent = entry && entry.content.trim().length > 0;
               const moodConfig = entry?.mood ? MOOD_CONFIGS[entry.mood] : null;
               const cellHijri = isHijri ? getHijriDateParts(new Date(viewYear, viewMonth - 1, dayNum)) : null;
+              const dayReminders = notes.filter(n => isNoteReminderOnDate(n, currentCellDate));
 
               return (
                 <button
@@ -239,21 +281,33 @@ export const Calendar: React.FC<CalendarProps> = ({
                     isToday && !isSelected && "border-[var(--color-active-border)]/60 ring-1 ring-[var(--color-active-border)]/20"
                   )}
                 >
-                  {/* الصف العلوي: مخصص للتاريخين فقط بدون أيقونات تزاحمهم */}
-                  <div className="flex items-baseline gap-1 w-full truncate">
-                    <span className={cn(
-                      "text-xs md:text-sm font-semibold rounded-md px-1 py-0.5 font-sans leading-none",
-                      isToday
-                        ? "bg-[var(--color-accent-warm)] text-white shadow-xs"
-                        : isSelected
-                        ? "text-[var(--color-accent-warm)] font-bold"
-                        : "text-[#1D1A16] dark:text-[#FFFFFF]"
-                    )}>
-                      {cellHijri ? toArabicNumerals(cellHijri.dayNumber) : toArabicNumerals(dayNum)}
-                    </span>
-                    {cellHijri && (
-                      <span className="text-[10px] text-[var(--color-text-muted)] font-sans opacity-70 leading-none">
-                        {toArabicNumerals(dayNum)}
+                  {/* الصف العلوي: مخصص للتاريخين فقط مع جرس صغير ناعم عند وجود تذكير */}
+                  <div className="flex items-baseline justify-between w-full">
+                    <div className="flex items-baseline gap-1 truncate">
+                      <span className={cn(
+                        "text-xs md:text-sm font-semibold rounded-md px-1 py-0.5 font-sans leading-none",
+                        isToday
+                          ? "bg-[var(--color-accent-warm)] text-white shadow-xs"
+                          : isSelected
+                          ? "text-[var(--color-accent-warm)] font-bold"
+                          : "text-[#1D1A16] dark:text-[#FFFFFF]"
+                      )}>
+                        {cellHijri ? toArabicNumerals(cellHijri.dayNumber) : toArabicNumerals(dayNum)}
+                      </span>
+                      {cellHijri && (
+                        <span className="text-[10px] text-[var(--color-text-muted)] font-sans opacity-70 leading-none">
+                          {toArabicNumerals(dayNum)}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* علامة صغيرة وناعمة للتذكير المجدول حتى لا تزاحم التقويم */}
+                    {dayReminders.length > 0 && (
+                      <span
+                        className="flex items-center text-amber-500 animate-pulse shrink-0"
+                        title={`تذكير ملاحظة: ${dayReminders.map(n => n.title || 'مذكرة').join(' • ')}`}
+                      >
+                        <Bell className="w-2.5 h-2.5 fill-current" />
                       </span>
                     )}
                   </div>
@@ -308,8 +362,12 @@ export const Calendar: React.FC<CalendarProps> = ({
             <span>يوم به تدوينات</span>
           </div>
           <div className="flex items-center gap-1.5">
+            <Bell className="w-3 h-3 text-amber-500 fill-current" />
+            <span>تذكير مجدول</span>
+          </div>
+          <div className="flex items-center gap-1.5">
             <span className="px-1.5 py-0.5 rounded bg-[var(--color-accent-warm)] text-white text-[10px] font-bold">اليوم</span>
-            <span>تاريخ الجهاز الحالي</span>
+            <span>تاريخ اليوم</span>
           </div>
         </div>
 

@@ -209,6 +209,10 @@ export async function fetchUserNotes(userId: string): Promise<QuickNote[]> {
       pinned: row.pinned || false,
       drawingData: row.drawing_data || undefined,
       updatedAt: row.updated_at,
+      reminderDate: row.reminder_date || undefined,
+      reminderTime: row.reminder_time || undefined,
+      reminderFrequency: row.reminder_frequency || undefined,
+      reminderCompleted: row.reminder_completed || false,
     }));
   } catch (err) {
     console.error('Error fetching notes:', err);
@@ -221,20 +225,42 @@ export async function saveUserNote(userId: string, note: QuickNote): Promise<boo
   if (!supabase) return false;
 
   try {
-    const { error } = await supabase
+    // 1. محاولة الحفظ بوجود حقول التذكير الجديدة
+    const payloadWithReminder: any = {
+      id: note.id,
+      user_id: userId,
+      title: note.title || '',
+      content: note.content || '',
+      category: note.category || 'أفكار',
+      pinned: note.pinned || false,
+      drawing_data: note.drawingData,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (note.reminderDate) payloadWithReminder.reminder_date = note.reminderDate;
+    if (note.reminderTime) payloadWithReminder.reminder_time = note.reminderTime;
+    if (note.reminderFrequency) payloadWithReminder.reminder_frequency = note.reminderFrequency;
+    if (note.reminderCompleted !== undefined) payloadWithReminder.reminder_completed = note.reminderCompleted;
+
+    const { error: fullError } = await supabase.from('notes').upsert(payloadWithReminder);
+
+    if (!fullError) return true;
+
+    // 2. خطة بديلة بالحقول الأساسية فقط في حال لم تُضَف أعمدة التذكير في قاعدة بيانات Supabase بعد
+    const { error: fallbackError } = await supabase
       .from('notes')
       .upsert({
         id: note.id,
         user_id: userId,
-        title: note.title,
-        content: note.content,
-        category: note.category,
-        pinned: note.pinned,
+        title: note.title || '',
+        content: note.content || '',
+        category: note.category || 'أفكار',
+        pinned: note.pinned || false,
         drawing_data: note.drawingData,
         updated_at: new Date().toISOString(),
       });
 
-    return !error;
+    return !fallbackError;
   } catch (err) {
     console.error('Error saving note:', err);
     return false;
