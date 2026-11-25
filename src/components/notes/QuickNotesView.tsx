@@ -25,7 +25,9 @@ import {
   AlertCircle,
   Repeat,
   X,
-  ChevronLeft
+  ChevronLeft,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { cn, toArabicNumerals, formatWordsCount, getTodayISODate } from '../../lib/utils';
 import { StylusCanvas } from '../common/StylusCanvas';
@@ -178,6 +180,248 @@ const NoteCalendarPicker: React.FC<NoteCalendarPickerProps> = ({
   );
 };
 
+// ----------------------------------------------------------------------------
+// منتقي الوقت العصري للتنبيهات والمواعيد (Custom Modern Time Picker)
+// ----------------------------------------------------------------------------
+interface ModernTimePickerProps {
+  value?: string;
+  onChange: (timeStr: string | undefined) => void;
+  onClose?: () => void;
+}
+
+const QUICK_TIME_PRESETS = [
+  { label: 'الصباح', time: '09:00', icon: Sun },
+  { label: 'الظهر', time: '13:00', icon: Sun },
+  { label: 'العصر', time: '17:00', icon: Sun },
+  { label: 'المساء', time: '20:30', icon: Moon },
+  { label: 'الليل', time: '22:00', icon: Moon },
+];
+
+export function parseTime24(timeStr?: string): { hour12: number; minute: number; period: 'AM' | 'PM' } {
+  if (!timeStr || !timeStr.includes(':')) {
+    return { hour12: 9, minute: 0, period: 'AM' };
+  }
+  const [hStr, mStr] = timeStr.split(':');
+  const h24 = parseInt(hStr, 10) || 0;
+  const minute = parseInt(mStr, 10) || 0;
+  const period: 'AM' | 'PM' = h24 >= 12 ? 'PM' : 'AM';
+  const hour12 = h24 % 12 === 0 ? 12 : h24 % 12;
+  return { hour12, minute, period };
+}
+
+export function formatTime24(hour12: number, minute: number, period: 'AM' | 'PM'): string {
+  let h24 = hour12 % 12;
+  if (period === 'PM') h24 += 12;
+  const hh = String(h24).padStart(2, '0');
+  const mm = String(minute).padStart(2, '0');
+  return `${hh}:${mm}`;
+}
+
+export function formatArabicTimeDisplay(timeStr?: string): string {
+  if (!timeStr) return '';
+  const { hour12, minute, period } = parseTime24(timeStr);
+  const periodAr = period === 'AM' ? 'ص' : 'م';
+  const hh = String(hour12).padStart(2, '0');
+  const mm = String(minute).padStart(2, '0');
+  return `${toArabicNumerals(hh)}:${toArabicNumerals(mm)} ${periodAr}`;
+}
+
+const ModernTimePicker: React.FC<ModernTimePickerProps> = ({
+  value,
+  onChange,
+  onClose,
+}) => {
+  const initial = parseTime24(value);
+  const [hour12, setHour12] = useState<number>(initial.hour12);
+  const [minute, setMinute] = useState<number>(initial.minute);
+  const [period, setPeriod] = useState<'AM' | 'PM'>(initial.period);
+
+  const applyChange = (h: number, m: number, p: 'AM' | 'PM') => {
+    setHour12(h);
+    setMinute(m);
+    setPeriod(p);
+    const time24 = formatTime24(h, m, p);
+    onChange(time24);
+  };
+
+  const handlePreset = (timeStr: string) => {
+    const parsed = parseTime24(timeStr);
+    applyChange(parsed.hour12, parsed.minute, parsed.period);
+  };
+
+  return (
+    <div className="w-full max-w-md mx-auto p-4 rounded-2xl bg-[#FBF7F0] dark:bg-[#1C1A17] border border-amber-500/40 shadow-lg space-y-3.5 select-none animate-fade-in">
+      {/* الترويسة واستعراض الوقت المختار */}
+      <div className="flex items-center justify-between pb-2 border-b border-black/[0.06] dark:border-white/[0.06]">
+        <div className="flex items-center gap-1.5 text-xs font-bold text-[var(--color-text-primary)]">
+          <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+          <span>تحديد وقت التنبيه</span>
+        </div>
+
+        {/* عرض الوقت المختار بوضوح وأناقة */}
+        <div className="text-sm font-bold font-mono px-3 py-1 rounded-xl bg-amber-500/15 text-amber-900 dark:text-amber-200 border border-amber-500/30">
+          {toArabicNumerals(String(hour12).padStart(2, '0'))}:{toArabicNumerals(String(minute).padStart(2, '0'))}{' '}
+          <span className="font-sans text-xs">{period === 'AM' ? 'صباحاً' : 'مساءً'}</span>
+        </div>
+      </div>
+
+      {/* التبديل بين الصباح والمساء */}
+      <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-black/[0.04] dark:bg-black/30 border border-amber-500/20">
+        <button
+          type="button"
+          onClick={() => applyChange(hour12, minute, 'AM')}
+          className={cn(
+            "flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-all",
+            period === 'AM'
+              ? "bg-amber-500 text-black shadow-xs font-black ring-1 ring-amber-300"
+              : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+          )}
+        >
+          <Sun className="w-3.5 h-3.5" />
+          <span>صباحاً (ص)</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => applyChange(hour12, minute, 'PM')}
+          className={cn(
+            "flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-all",
+            period === 'PM'
+              ? "bg-amber-500 text-black shadow-xs font-black ring-1 ring-amber-300"
+              : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+          )}
+        >
+          <Moon className="w-3.5 h-3.5" />
+          <span>مساءً (م)</span>
+        </button>
+      </div>
+
+      {/* اختيار الساعة (1 إلى 12) */}
+      <div className="space-y-1.5">
+        <div className="text-[11px] font-semibold text-[var(--color-text-muted)]">
+          الساعة:
+        </div>
+        <div className="grid grid-cols-6 gap-1.5">
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(h => (
+            <button
+              key={h}
+              type="button"
+              onClick={() => applyChange(h, minute, period)}
+              className={cn(
+                "h-8 rounded-xl text-xs font-bold flex items-center justify-center transition-all",
+                hour12 === h
+                  ? "bg-amber-500 text-black font-black shadow-xs ring-2 ring-amber-300 scale-105"
+                  : "bg-black/[0.03] dark:bg-white/[0.05] text-[var(--color-text-primary)] hover:bg-black/[0.08] dark:hover:bg-white/[0.1]"
+              )}
+            >
+              {toArabicNumerals(h)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* اختيار الدقيقة + درجات الضبط */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between text-[11px] font-semibold text-[var(--color-text-muted)]">
+          <span>الدقيقة:</span>
+          <span className="font-mono text-amber-700 dark:text-amber-300 font-bold">
+            :{toArabicNumerals(String(minute).padStart(2, '0'))}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="grid grid-cols-4 gap-1.5 flex-1">
+            {[0, 15, 30, 45].map(m => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => applyChange(hour12, m, period)}
+                className={cn(
+                  "py-1.5 rounded-xl text-xs font-bold transition-all font-mono",
+                  minute === m
+                    ? "bg-amber-500 text-black font-black shadow-xs ring-2 ring-amber-300"
+                    : "bg-black/[0.03] dark:bg-white/[0.05] text-[var(--color-text-primary)] hover:bg-black/[0.08] dark:hover:bg-white/[0.1]"
+                )}
+              >
+                :{toArabicNumerals(String(m).padStart(2, '0'))}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              type="button"
+              onClick={() => applyChange(hour12, (minute - 5 + 60) % 60, period)}
+              className="px-2 py-1.5 rounded-xl bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.09] dark:hover:bg-white/[0.12] text-xs font-mono font-bold transition-colors"
+              title="إنقاص 5 دقائق"
+            >
+              -٥
+            </button>
+            <button
+              type="button"
+              onClick={() => applyChange(hour12, (minute + 5) % 60, period)}
+              className="px-2 py-1.5 rounded-xl bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.09] dark:hover:bg-white/[0.12] text-xs font-mono font-bold transition-colors"
+              title="زيادة 5 دقائق"
+            >
+              +٥
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* أوقات شائعة مقترحة */}
+      <div className="space-y-1 pt-1">
+        <div className="text-[10px] text-amber-700 dark:text-amber-400 font-semibold">
+          أوقات سريعة مقترحة:
+        </div>
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+          {QUICK_TIME_PRESETS.map(preset => {
+            const Icon = preset.icon;
+            const isPresetActive = value === preset.time;
+            return (
+              <button
+                key={preset.time}
+                type="button"
+                onClick={() => handlePreset(preset.time)}
+                className={cn(
+                  "flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-semibold border transition-all shrink-0",
+                  isPresetActive
+                    ? "bg-amber-500 text-black border-amber-400 font-black shadow-xs"
+                    : "bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 border-amber-500/20"
+                )}
+              >
+                <Icon className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                <span>{preset.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* شريط الإجراءات السفلي */}
+      <div className="flex items-center justify-between pt-2.5 border-t border-black/[0.06] dark:border-white/[0.06] text-xs">
+        <button
+          type="button"
+          onClick={() => {
+            onChange(undefined);
+            if (onClose) onClose();
+          }}
+          className="text-rose-500 hover:text-rose-600 text-xs font-semibold transition-colors"
+        >
+          مسح الوقت
+        </button>
+
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-1.5 rounded-xl bg-amber-500 text-black font-bold hover:bg-amber-400 transition-colors shadow-xs text-xs"
+          >
+            تأكيد
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
 interface QuickNotesViewProps {
   user?: UserProfile | null;
   onRequireAuth?: () => void;
@@ -193,6 +437,7 @@ export const QuickNotesView: React.FC<QuickNotesViewProps> = ({ user, onRequireA
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving'>('saved');
   const [isReminderOpen, setIsReminderOpen] = useState(false);
   const [isCalendarPickerOpen, setIsCalendarPickerOpen] = useState(false);
+  const [isTimePickerOpen, setIsTimePickerOpen] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Global wipe event listener
@@ -620,7 +865,7 @@ export const QuickNotesView: React.FC<QuickNotesViewProps> = ({ user, onRequireA
                           <div className="flex items-center gap-1.5 mt-2.5 px-2.5 py-1 rounded-xl bg-amber-500/10 border border-amber-500/25 text-[11px] text-amber-700 dark:text-amber-300 w-fit">
                             <Bell className="w-3 h-3 text-amber-500 shrink-0" />
                             <span className="font-mono">{n.reminderDate}</span>
-                            {n.reminderTime && <span>• {n.reminderTime}</span>}
+                            {n.reminderTime && <span>• {formatArabicTimeDisplay(n.reminderTime)}</span>}
                             {n.reminderFrequency && n.reminderFrequency !== 'once' && (
                               <span className="text-[9px] bg-amber-500/20 px-1.5 py-0.2 rounded-md font-bold">
                                 {FREQUENCY_LABELS[n.reminderFrequency]}
@@ -825,6 +1070,8 @@ export const QuickNotesView: React.FC<QuickNotesViewProps> = ({ user, onRequireA
                             reminderTime: undefined,
                             reminderFrequency: undefined,
                           });
+                          setIsCalendarPickerOpen(false);
+                          setIsTimePickerOpen(false);
                         }}
                         className="text-[11px] text-rose-500 hover:underline flex items-center gap-1 font-semibold"
                       >
@@ -842,7 +1089,10 @@ export const QuickNotesView: React.FC<QuickNotesViewProps> = ({ user, onRequireA
                       </label>
                       <button
                         type="button"
-                        onClick={() => setIsCalendarPickerOpen(prev => !prev)}
+                        onClick={() => {
+                          setIsCalendarPickerOpen(prev => !prev);
+                          setIsTimePickerOpen(false);
+                        }}
                         className="w-full flex items-center justify-between text-xs px-3 py-2 rounded-xl bg-[var(--color-bg-surface)] dark:bg-[var(--color-bg-card)] border border-amber-500/35 text-[var(--color-text-primary)] hover:border-amber-500 transition-colors shadow-xs"
                       >
                         <div className="flex items-center gap-2 truncate">
@@ -857,17 +1107,34 @@ export const QuickNotesView: React.FC<QuickNotesViewProps> = ({ user, onRequireA
                       </button>
                     </div>
 
-                    {/* الوقت (اختياري) */}
+                    {/* الوقت (اختياري) بأسلوب عصري وأنيق */}
                     <div>
                       <label className="text-[11px] font-semibold text-amber-800 dark:text-amber-300 block mb-1">
                         الوقت (اختياري)
                       </label>
-                      <input
-                        type="time"
-                        value={activeNote.reminderTime || ''}
-                        onChange={(e) => handleUpdateActive({ reminderTime: e.target.value })}
-                        className="w-full text-xs px-3 py-2 rounded-xl bg-[var(--color-bg-surface)] dark:bg-[var(--color-bg-card)] border border-amber-500/30 text-[var(--color-text-primary)] focus:outline-none focus:ring-1 focus:ring-amber-500"
-                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsTimePickerOpen(prev => !prev);
+                          setIsCalendarPickerOpen(false);
+                        }}
+                        className={cn(
+                          "w-full flex items-center justify-between text-xs px-3 py-2 rounded-xl border transition-all shadow-xs text-start",
+                          activeNote.reminderTime
+                            ? "bg-amber-500/10 border-amber-500/50 text-[var(--color-text-primary)] font-bold ring-1 ring-amber-500/20"
+                            : "bg-[var(--color-bg-surface)] dark:bg-[var(--color-bg-card)] border-amber-500/35 text-[var(--color-text-muted)] hover:border-amber-500"
+                        )}
+                      >
+                        <div className="flex items-center gap-2 truncate">
+                          <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                          <span className="font-sans text-xs">
+                            {activeNote.reminderTime ? formatArabicTimeDisplay(activeNote.reminderTime) : 'اختر وقت التنبيه...'}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold shrink-0">
+                          {isTimePickerOpen ? 'إغلاق ✕' : activeNote.reminderTime ? 'تعديل ⏰' : 'تحديد ⏰'}
+                        </span>
+                      </button>
                     </div>
 
                     {/* نمط التكرار */}
@@ -902,6 +1169,22 @@ export const QuickNotesView: React.FC<QuickNotesViewProps> = ({ user, onRequireA
                           setIsCalendarPickerOpen(false);
                         }}
                         onClose={() => setIsCalendarPickerOpen(false)}
+                      />
+                    </div>
+                  )}
+
+                  {/* منتقي الوقت العصري التفاعلي يفتح هنا ضمن تسلسل الصفحة */}
+                  {isTimePickerOpen && (
+                    <div className="pt-2 animate-fade-in">
+                      <ModernTimePicker
+                        value={activeNote.reminderTime}
+                        onChange={(pickedTime) => {
+                          handleUpdateActive({
+                            reminderTime: pickedTime,
+                            reminderFrequency: activeNote.reminderFrequency || 'once',
+                          });
+                        }}
+                        onClose={() => setIsTimePickerOpen(false)}
                       />
                     </div>
                   )}

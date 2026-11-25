@@ -283,9 +283,10 @@ export const Calendar: React.FC<CalendarProps> = ({
                     isToday && !isSelected && "border-[var(--color-active-border)]/60 ring-1 ring-[var(--color-active-border)]/20"
                   )}
                 >
-                  {/* الصف العلوي: مخصص للتاريخين مع شعار بارز ومميز للمواعيد المهمة */}
-                  <div className="flex items-baseline justify-between w-full">
-                    <div className="flex items-baseline gap-1 truncate">
+                  {/* الصف العلوي: مخصص للتاريخين مع شعار بارز ومميز للمواعيد المهمة دون أي تداخل */}
+                  <div className="flex items-start justify-between w-full gap-1">
+                    {/* عمود التاريخ: التاريخ الأساسي فوق، والتاريخ الثانوي تحته رأسياً لضمان عدم شغل أي مساحة أفقية زائدة */}
+                    <div className="flex flex-col items-start leading-none shrink-0 min-w-0">
                       <span className={cn(
                         "text-xs md:text-sm font-semibold rounded-md px-1 py-0.5 font-sans leading-none",
                         isToday
@@ -297,16 +298,16 @@ export const Calendar: React.FC<CalendarProps> = ({
                         {cellHijri ? toArabicNumerals(cellHijri.dayNumber) : toArabicNumerals(dayNum)}
                       </span>
                       {cellHijri && (
-                        <span className="text-[10px] text-[var(--color-text-muted)] font-sans opacity-70 leading-none">
+                        <span className="text-[9px] sm:text-[10px] text-[var(--color-text-muted)] font-sans opacity-75 px-1 pt-0.5 leading-none">
                           {toArabicNumerals(dayNum)}
                         </span>
                       )}
                     </div>
 
-                    {/* شعار مميز وبارز بلون مشرق للمواعيد والتذكيرات المهمة */}
+                    {/* شعار مميز وبارز بلون مشرق للمواعيد والتذكيرات المهمة في الزاوية المقابلة بمساحة حرة ومستقلة */}
                     {dayReminders.length > 0 && (
                       <span
-                        className="flex items-center justify-center w-5 h-5 rounded-full bg-gradient-to-tr from-amber-600 via-amber-500 to-amber-400 text-white shadow-xs shadow-amber-500/40 ring-2 ring-amber-300/60 dark:ring-amber-500/40 shrink-0 transform transition-transform group-hover:scale-115"
+                        className="flex items-center justify-center w-4 h-4 sm:w-4.5 sm:h-4.5 rounded-full bg-gradient-to-tr from-amber-600 via-amber-500 to-amber-400 text-white shadow-xs shadow-amber-500/40 ring-1.5 ring-amber-300/60 dark:ring-amber-500/40 shrink-0 transform transition-transform group-hover:scale-110"
                         title={`موعد وتذكير مهم: ${dayReminders.map(n => n.title || 'ملاحظة بدون عنوان').join(' • ')}`}
                       >
                         <Bell className="w-2.5 h-2.5 fill-white text-white drop-shadow-xs" />
